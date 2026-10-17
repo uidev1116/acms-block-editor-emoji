@@ -27,6 +27,9 @@ export const SuggestionList = forwardRef<SuggestionListHandle, Props>(function S
   useImperativeHandle(ref, () => ({
     onKeyDown({ event }) {
       if (items.length === 0 || isComposingEvent(event)) return false;
+      // Shift+Enter（改行）などの修飾キー付きは、エディター本来の動作に任せる
+      if (event.shiftKey || event.ctrlKey || event.altKey || event.metaKey) return false;
+      const current = Math.min(selected, items.length - 1);
       switch (event.key) {
         case 'ArrowDown':
           setSelected((s) => (s + 1) % items.length);
@@ -36,7 +39,7 @@ export const SuggestionList = forwardRef<SuggestionListHandle, Props>(function S
           return true;
         case 'Enter':
         case 'Tab':
-          command({ emoji: items[selected].emoji });
+          command({ emoji: items[current].emoji });
           return true;
         default:
           return false;
@@ -45,6 +48,7 @@ export const SuggestionList = forwardRef<SuggestionListHandle, Props>(function S
   }));
 
   if (items.length === 0) return null;
+  const active = Math.min(selected, items.length - 1);
 
   return (
     <ul className="acms-emoji-list" role="listbox">
@@ -52,7 +56,7 @@ export const SuggestionList = forwardRef<SuggestionListHandle, Props>(function S
         <li
           key={item.emoji}
           role="option"
-          aria-selected={index === selected}
+          aria-selected={index === active}
           className="acms-emoji-list__item"
           onMouseDown={(e) => e.preventDefault()}
           onMouseEnter={() => setSelected(index)}

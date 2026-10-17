@@ -707,7 +707,13 @@ export function searchEmoji(data: EmojiEntry[], query: string, limit: number): E
 9. **コードブロック内**では、ツールバーの絵文字ボタンは無効、`insertEmoji` / `openEmojiPicker` は何もしない。
 10. **PHP**：`Hook` は `ADMIN` / `DIR_OFFSET` を `protected` メソッド経由で読む（定数は再定義できずテストできないため）。PHPUnit のカバレッジは、コア側のオートローダーがマウント先 `/var/www/html/extension/plugins/BlockEditorEmoji` から読み込むため、`phpunit.coverage.xml.dist` を別に用意し `composer coverage` で測る。Docker のイメージは `3.2-php8.4`、ポートは `.env` の `ACMS_PORT`（18082）。
 11. **リポジトリ構成**：`frontend/plugin.ts`（`setup` と URL 解決）と `frontend/position.ts` を追加し、`index.ts` は `register` だけにした（テストしやすくするため）。テストは `tests/js/` に置き、Tiptap の実物（`@tiptap/core` など）を渡した本物のエディターで統合テストしている。
-12. **CI**：`frontend` ジョブで `npm run coverage`（vitest のカバレッジ）も実行する。
+12. **選択範囲があるとき**は、その範囲を絵文字で置き換える（OS 標準のピッカーと同じ）。ピッカーを開く前の `from`〜`to` を保存して `insertContentAt` する。
+13. **候補の取得中（Tiptap 3.31 以降の `loading`）**は前の表示を保つ。毎回リストを作り直すと、入力のたびにちらつき、選択位置も戻ってしまう。
+14. **Enter / Tab は修飾キーなしのときだけ**確定に使う（Shift+Enter の改行などは奪わない）。
+15. **IIFE のラッパー**は `register()` の例外を握りつぶして `console.error` に出す。`ACMS.plugins` の代入は `admin.js` の初期化の途中で起きるため、例外が出ると管理画面の初期化が止まるから。
+16. **ポップアップの破棄はエディター単位**：エディターを破棄したとき、そのエディターのポップアップだけ閉じる（`closeActivePopup(editor)`）。
+17. **ツールチップのショートカット表示**は Mac では ⌘⌥E、それ以外では Ctrl+Alt+E。ショートカット一覧のラベルは `setup()` の時点では翻訳が使えないため日本語固定（英語 UI でも日本語。要判断）。
+18. **CI**：`frontend` ジョブで `npm run coverage`（vitest のカバレッジ）も実行する。
 
 ### テストとカバレッジ
 

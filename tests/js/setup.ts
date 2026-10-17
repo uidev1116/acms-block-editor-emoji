@@ -7,9 +7,11 @@ import { NAMESPACE, resources } from '../../frontend/i18n';
 // @ablogcms/i18n のファサードは window.ACMS.i18n に委譲する。テストでは日本語リソースを引く。
 beforeEach(() => {
   if (typeof window === 'undefined') return;
-  const translate = (key: string) => {
+  const translate = (key: string, options?: Record<string, unknown>) => {
     const [ns, name] = key.split(':');
-    return ns === NAMESPACE ? ((resources.ja as Record<string, string>)[name] ?? key) : key;
+    const text = ns === NAMESPACE ? ((resources.ja as Record<string, string>)[name] ?? key) : key;
+    // i18next の {{name}} 補間
+    return text.replace(/\{\{(\w+)\}\}/g, (_, k: string) => String(options?.[k] ?? ''));
   };
   Object.assign(translate, { lng: 'ja' });
   (window as unknown as { ACMS: unknown }).ACMS = { i18n: translate };

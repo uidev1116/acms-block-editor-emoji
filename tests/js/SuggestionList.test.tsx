@@ -85,6 +85,14 @@ describe('SuggestionList', () => {
     expect(command).not.toHaveBeenCalled();
   });
 
+  it('Shift+Enter など修飾キー付きは奪わない（改行・ショートカットはエディターに任せる）', () => {
+    const { ref, command } = setup();
+    for (const mod of ['shiftKey', 'ctrlKey', 'altKey', 'metaKey'] as const) {
+      expect(ref.current!.onKeyDown({ event: key('Enter', { [mod]: true }) })).toBe(false);
+    }
+    expect(command).not.toHaveBeenCalled();
+  });
+
   it('関係ないキーは処理しない。0 件のときも処理しない', () => {
     const { ref } = setup();
     expect(ref.current!.onKeyDown({ event: key('a') })).toBe(false);

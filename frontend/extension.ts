@@ -30,6 +30,11 @@ declare module '@tiptap/core' {
 }
 
 const MAX_ITEMS = 8;
+
+/** ツールチップに出すショートカット（Mod は Mac では ⌘、それ以外では Ctrl） */
+export function shortcutLabel(): string {
+  return /Mac|iPhone|iPad/.test(navigator.platform) ? '⌘⌥E' : 'Ctrl+Alt+E';
+}
 const TRIGGERS = [':', '：'] as const;
 
 /** コードブロック内では絵文字を入れない */
@@ -70,6 +75,8 @@ interface SuggestionRenderProps {
   items: EmojiEntry[];
   command: (props: { emoji: string }) => void;
   clientRect?: (() => DOMRect | null) | null;
+  /** Tiptap 3.31 以降：items の取得中は true（このとき items は空） */
+  loading?: boolean;
 }
 
 /** Suggestion の render()。候補が 0 件のときはリストを閉じる */
@@ -85,6 +92,8 @@ export function createSuggestionRender(tiptap: Tiptap) {
 
   const show = (props: SuggestionRenderProps) => {
     current = props;
+    // 候補の取得中は前の表示を保つ（毎回作り直すとちらつき、選択位置も戻ってしまう）
+    if (props.loading) return;
     if (props.items.length === 0) {
       close();
       return;
@@ -131,7 +140,7 @@ export function createEmojiExtension(tiptap: Tiptap, deps: Deps) {
             scope: 'text',
             order: 50,
             icon: 'add_reaction',
-            tooltip: t('block-editor-emoji:openPicker'),
+            tooltip: t('block-editor-emoji:openPicker', { shortcut: shortcutLabel() }),
             isDisabled: (editor: Editor) => !canInsertHere(editor),
             onSelect: (editor: Editor) => {
               editor.commands.openEmojiPicker();
@@ -162,7 +171,7 @@ export function createEmojiExtension(tiptap: Tiptap, deps: Deps) {
     },
 
     onDestroy() {
-      closeActivePopup();
+      closeActivePopup(this.editor);
     },
 
     addProseMirrorPlugins() {

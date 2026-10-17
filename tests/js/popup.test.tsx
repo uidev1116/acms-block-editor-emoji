@@ -77,6 +77,18 @@ describe('createPopup', () => {
     await expect(popup.updatePosition()).resolves.toBeUndefined();
   });
 
+  it('closeActivePopup(editor) は、そのエディターのポップアップだけ閉じる', async () => {
+    mounted = mountEditor([]);
+    const other = mountEditor([]);
+    createPopup(tiptap, mounted.editor, Probe, { text: 'x' }, rect);
+    await act(async () => {});
+    closeActivePopup(other.editor);
+    expect(document.body.querySelector('.acms-emoji-popup')).not.toBeNull();
+    closeActivePopup(mounted.editor);
+    expect(document.body.querySelector('.acms-emoji-popup')).toBeNull();
+    other.unmount();
+  });
+
   it('destroy は二度呼んでも安全', async () => {
     mounted = mountEditor([]);
     const popup = createPopup(tiptap, mounted.editor, Probe, { text: 'x' }, rect);

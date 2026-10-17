@@ -109,15 +109,41 @@ describe('EmojiPicker', () => {
     expect(fetchMock).toHaveBeenCalled();
   });
 
-  it('絵文字を選ぶと onSelect が呼ばれる', async () => {
+  it('Esc はエラー表示でも効く。IME の変換中の Esc では閉じない', async () => {
+    stubFetch(false);
+    const onClose = vi.fn();
+    render(<EmojiPicker emojibaseUrl="/missing2" onSelect={vi.fn()} onClose={onClose} />);
+    const alert = await screen.findByRole('alert');
+    fireEvent.keyDown(alert, { key: 'Escape', isComposing: true });
+    expect(onClose).not.toHaveBeenCalled();
+    fireEvent.keyDown(alert, { key: 'Escape' });
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('IME の変換中の Esc では閉じない（検索欄）', () => {
     stubFetch();
+    const onClose = vi.fn();
+    render(<EmojiPicker emojibaseUrl="/emojibase" onSelect={vi.fn()} onClose={onClose} />);
+    fireEvent.keyDown(screen.getByPlaceholderText('絵文字を検索'), { key: 'Escape', isComposing: true });
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it('絵文字を選ぶと onSelect が呼ばれる（レイアウトを持たない jsdom に寸法を与えて描画させる）', async () => {
+    stubFetch();
+    const size = { width: 300, height: 300, top: 0, left: 0, right: 300, bottom: 300, x: 0, y: 0, toJSON: () => ({}) };
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(size as DOMRect);
+    for (const prop of ['clientHeight', 'clientWidth', 'offsetHeight', 'offsetWidth'] as const) {
+      vi.spyOn(HTMLElement.prototype, prop, 'get').mockReturnValue(300);
+    }
     const onSelect = vi.fn();
     render(<EmojiPicker emojibaseUrl="/emojibase" onSelect={onSelect} onClose={vi.fn()} />);
-    // 仮想スクロールで jsdom では行が描画されないことがあるため、描画されている場合のみ確認する
-    const btn = await screen.findByRole('gridcell', {}, { timeout: 1500 }).catch(() => null);
-    if (btn) {
-      fireEvent.click(btn);
-      expect(onSelect).toHaveBeenCalled();
-    }
+    // 読み込み前は 🙂 のプレースホルダーが並ぶので、実データの絵文字が出るまで待つ
+    const cell = await waitFor(() => {
+      const el = [...document.querySelectorAll<HTMLElement>('[frimousse-emoji]')].find((e) => e.textContent === '😄');
+      expect(el).toBeDefined();
+      return el as HTMLElement;
+    });
+    fireEvent.click(cell);
+    expect(onSelect).toHaveBeenCalledWith('😄');
   });
 });

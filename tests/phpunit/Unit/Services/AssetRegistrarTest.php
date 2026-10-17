@@ -19,7 +19,7 @@ final class AssetRegistrarTest extends TestCase
     public static function adminValues(): array
     {
         return [
-            'entry edit screen' => ['entry-edit', true],
+            'entry edit screen' => ['entry_editor', true],
             'any admin screen' => ['top', true],
             'public page (empty string)' => ['', false],
             'public page (null)' => [null, false],

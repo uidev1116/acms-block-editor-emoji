@@ -1,6 +1,6 @@
 import { act } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createEmojiExtension } from '../../frontend/extension';
+import { createEmojiExtension, createSuggestionRender, shortcutLabel } from '../../frontend/extension';
 import { resetEmojiDataCache } from '../../frontend/emoji-data';
 import { closeActivePopup } from '../../frontend/popup';
 import { getRecent } from '../../frontend/recent';
@@ -192,7 +192,7 @@ describe('コマンドとショートカット', () => {
     const editor = mount();
     const ext = editor.extensionManager.extensions.find((e) => e.name === 'emojiInput')!;
     const [item] = ext.options.blockMenu;
-    expect(item).toMatchObject({ scope: 'text', icon: 'add_reaction', tooltip: '絵文字（⌘⌥E）' });
+    expect(item).toMatchObject({ scope: 'text', icon: 'add_reaction', tooltip: `絵文字（${shortcutLabel()}）` });
     expect(item.isDisabled(editor)).toBe(false);
     editor.commands.setCodeBlock();
     expect(item.isDisabled(editor)).toBe(true);
@@ -241,5 +241,51 @@ describe('コマンドとショートカット', () => {
     });
     editor.destroy();
     expect(document.querySelector('.acms-emoji-popup')).toBeNull();
+  });
+});
+
+describe('ショートカットの表示', () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it('Mac では ⌘⌥E、それ以外では Ctrl+Alt+E', () => {
+    vi.spyOn(navigator, 'platform', 'get').mockReturnValue('MacIntel');
+    expect(shortcutLabel()).toBe('⌘⌥E');
+    vi.spyOn(navigator, 'platform', 'get').mockReturnValue('Win32');
+    expect(shortcutLabel()).toBe('Ctrl+Alt+E');
+  });
+});
+
+describe('候補の更新', () => {
+  it('入力を続けても、リストを作り直さない（ちらつき防止）', async () => {
+    const editor = mount();
+    await type(editor, ':sm');
+    const first = document.querySelector('.acms-emoji-popup');
+    expect(first).not.toBeNull();
+    await type(editor, 'i');
+    expect(document.querySelector('.acms-emoji-popup')).toBe(first);
+  });
+
+  it('候補の取得中（loading）は前の表示を保つ', async () => {
+    const editor = mount();
+    const render = createSuggestionRender(tiptap);
+    const base = { editor, command: () => {}, clientRect: () => new DOMRect(0, 0, 0, 0) };
+    const entry = { emoji: '😄', label: 'x', tags: [], shortcodes: [], order: 0, normLabel: 'x', normTags: [] };
+    await act(async () => render.onStart({ ...base, items: [entry] }));
+    const popup = document.querySelector('.acms-emoji-popup');
+    await act(async () => render.onUpdate({ ...base, items: [], loading: true }));
+    expect(document.querySelector('.acms-emoji-popup')).toBe(popup);
+    await act(async () => render.onUpdate({ ...base, items: [] }));
+    expect(document.querySelector('.acms-emoji-popup')).toBeNull();
+    render.onExit();
+  });
+
+  it('別のエディターを破棄しても、自分のポップアップは閉じない', async () => {
+    const editor = mount();
+    await act(async () => {
+      editor.commands.openEmojiPicker();
+    });
+    const other = mountEditor([createEmojiExtension(tiptap, { emojibaseUrl: '/emojibase' })]);
+    other.unmount();
+    expect(document.querySelector('.acms-emoji-popup')).not.toBeNull();
   });
 });

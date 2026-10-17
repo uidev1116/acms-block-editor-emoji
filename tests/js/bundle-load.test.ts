@@ -88,6 +88,25 @@ describe('ビルド成果物', () => {
     expect(() => vm.runInNewContext(js, none)).not.toThrow();
   });
 
+  it('register が例外を投げても、代入した側（admin.js）には伝えない', () => {
+    const win: any = { ACMS: { Library: { React, ReactJsxRuntime } } };
+    win.window = win;
+    vm.runInNewContext(js, win);
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    // vm 内の console は別物なので、例外が外に出ないことだけを確かめる
+    const boom = { register: () => { throw new Error('boom'); } };
+    expect(() => { win.ACMS.plugins = boom; }).not.toThrow();
+    spy.mockRestore();
+  });
+
+  it('ACMS.plugins が既に有って React が無い場合も、値は消えない', () => {
+    const plugins = { register: vi.fn() };
+    const win: any = { ACMS: { plugins, Library: {} } };
+    win.window = win;
+    vm.runInNewContext(js, win);
+    expect(win.ACMS.plugins).toBe(plugins);
+  });
+
   it('setup は Tiptap に触れずに完了し、ファクトリは Tiptap の用意後に拡張を返す', async () => {
     const { register, lazy } = loadBundle();
     const ctx = {

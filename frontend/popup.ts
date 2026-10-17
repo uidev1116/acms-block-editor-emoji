@@ -20,10 +20,13 @@ export interface PopupHandle<P = Record<string, unknown>, R = unknown> {
 }
 
 /** ポップアップは同時に 1 つだけ */
-let active: { destroy: () => void } | null = null;
+let active: { handle: PopupHandle<never, unknown>; editor: Editor } | null = null;
 
-export function closeActivePopup(): void {
-  active?.destroy();
+/** 開いているポップアップを閉じる。editor を渡すと、そのエディターのものだけ閉じる */
+export function closeActivePopup(editor?: Editor): void {
+  if (active && (!editor || active.editor === editor)) {
+    active.handle.destroy();
+  }
 }
 
 /**
@@ -95,7 +98,7 @@ export function createPopup<P extends Record<string, unknown>, R = unknown>(
       destroyed = true;
       document.removeEventListener('pointerdown', onPointerDown, true);
       renderer.destroy();
-      if (active === handle) active = null;
+      if (active?.handle === (handle as unknown)) active = null;
       options.onClose?.();
     },
   };
@@ -110,6 +113,6 @@ export function createPopup<P extends Record<string, unknown>, R = unknown>(
     stopAutoUpdate();
     baseDestroy();
   };
-  active = handle;
+  active = { handle: handle as unknown as PopupHandle<never, unknown>, editor };
   return handle;
 }

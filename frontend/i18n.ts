@@ -3,7 +3,7 @@ export const NAMESPACE = 'block-editor-emoji';
 
 export const resources = {
   ja: {
-    openPicker: '絵文字（⌘⌥E）',
+    openPicker: '絵文字（{{shortcut}}）',
     search: '絵文字を検索',
     loading: '読み込み中…',
     empty: '見つかりませんでした',
@@ -13,7 +13,7 @@ export const resources = {
     shortcutOpenPicker: '絵文字ピッカーを開く',
   },
   en: {
-    openPicker: 'Emoji (⌘⌥E)',
+    openPicker: 'Emoji ({{shortcut}})',
     search: 'Search emoji',
     loading: 'Loading…',
     empty: 'No emoji found',

@@ -1,5 +1,5 @@
 import { t } from '@ablogcms/i18n';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { EmojiPicker as P, defaultEmojiDataResolver, type EmojiDataResolver } from 'frimousse';
 import { augmentPickerData } from './emoji-data';
 import { getRecent } from './recent';
@@ -49,6 +49,14 @@ function RecentRow({ onSelect }: { onSelect: (emoji: string) => void }) {
   );
 }
 
+/** Esc で閉じる。IME の変換中の Esc（変換の取り消し）では閉じない */
+function closeOnEscape(e: KeyboardEvent<HTMLElement>, onClose: () => void) {
+  if (e.key === 'Escape' && !e.nativeEvent.isComposing) {
+    e.stopPropagation();
+    onClose();
+  }
+}
+
 export function EmojiPicker({ emojibaseUrl, onSelect, onClose }: EmojiPickerProps) {
   const [attempt, setAttempt] = useState(0);
   const [failed, setFailed] = useState(false);
@@ -71,10 +79,15 @@ export function EmojiPicker({ emojibaseUrl, onSelect, onClose }: EmojiPickerProp
 
   if (failed) {
     return (
-      <div className="acms-emoji-picker acms-emoji-picker--error" role="alert">
+      <div
+        className="acms-emoji-picker acms-emoji-picker--error"
+        role="alert"
+        onKeyDown={(e) => closeOnEscape(e, onClose)}
+      >
         <p>{t('block-editor-emoji:loadError')}</p>
         <button
           type="button"
+          autoFocus
           onClick={() => {
             setFailed(false);
             setAttempt((n) => n + 1);
@@ -96,12 +109,7 @@ export function EmojiPicker({ emojibaseUrl, onSelect, onClose }: EmojiPickerProp
       resolveEmojiData={resolver}
       columns={9}
       onEmojiSelect={({ emoji }) => onSelect(emoji)}
-      onKeyDown={(e) => {
-        if (e.key === 'Escape') {
-          e.stopPropagation();
-          onClose();
-        }
-      }}
+      onKeyDown={(e) => closeOnEscape(e, onClose)}
     >
       <P.Search
         className="acms-emoji-picker__search"
