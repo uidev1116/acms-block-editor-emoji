@@ -6,9 +6,9 @@ a-blog cms のブロックエディターに機能を追加する**独立した�
 
 作成 2026-10-18 ／ 対象 @ablogcms/* 3.2.37（Tiptap 3.3x / React 19） ／ ビルド Vite 8 ライブラリモード（IIFE） ／ plugins/BlockEditorEmoji/
 
-> **UI パターンはユーザーが選ぶ（未決定）**
+> **UI パターン：S1（縦リスト）・T1（ツールバーのボタン＋ショートカット）・P1（フルピッカー）で実装した**
 >
-> UI は UI モック（バックエンドの `docs/block-editor-plugins/emoji/ui-mock.html`。手元で見る用でコミットしない。要約は付録） で 3 つの観点（S1/S2 候補の見た目・T1〜T3 開き方・P1/P2 ピッカーの形）を比較中。本書のコード例は 【推奨】 案（S1・T1・P1）で書いてある。T2 に決まった場合は `registerBlockDefinition` の追加、T3 なら frimousse とピッカーが不要になる。保存形式（4.2）はどの案でも同じ。 選んだパターン ID は、実装セッションへのプロンプト（手順書（バックエンドの `docs/block-editor-plugins/runbook.html`。手元で見る用でコミットしない））に書き添えること。
+> UI モック（バックエンドの `docs/block-editor-plugins/emoji/ui-mock.html`。手元で見る用でコミットしない。要約は付録）の 3 観点のうち、推奨案を採用した。T2 に変える場合は `registerBlockDefinition` の追加、T3 なら frimousse とピッカーが不要になる。保存形式（4.2）はどの案でも同じ。実装で設計から変えた点は 7 章にまとめてある。
 
 ## 1. 概要とゴール
 
@@ -216,7 +216,8 @@ git init -b master && git add -A && git commit -m "Initial commit from ablogcms/
     "setup": "npm run build",              // バックエンドの tools/setup.js が submodule ごとに呼ぶ（必須）
     "dev": "vite build --watch --mode development",
     "typecheck": "tsc --noEmit",
-    "build": "vite build" && node scripts/copy-emojibase.mjs,
+    "coverage": "vitest run --coverage",
+    "build": "vite build && node scripts/copy-emojibase.mjs",
     "test": "vitest run"
   },
   "dependencies": {
@@ -266,6 +267,7 @@ const globals: Record<string, string> = {
 
 export default defineConfig(({ mode }) => ({
   plugins: [react()],
+  define: { 'process.env.NODE_ENV': JSON.stringify('production') }, // 7 章 (2)
   publicDir: false,              // 絵文字データはビルド後に別途コピーする（4.5 (6)）
   build: {
     outDir: 'src/assets',
@@ -282,7 +284,7 @@ export default defineConfig(({ mode }) => ({
     // Vite 8 は Rolldown。rollupOptions は互換エイリアスとして残っているが、新しい名前は rolldownOptions
     rolldownOptions: {
       external: (id) => id in globals,
-      output: { globals },
+      output: { globals, banner: BOOT_BANNER, footer: BOOT_FOOTER }, // 7 章 (1)：実行を ACMS.plugins の代入まで遅らせる
     },
   },
 }));
@@ -641,12 +643,12 @@ export function searchEmoji(data: EmojiEntry[], query: string, limit: number): E
 
 | # | 項目 | 確認方法 / 代替案 |
 |---|---|---|
-| U-1 | `Hook::afterBuild()` での管理画面の判定（`ADMIN` 定数）が、ブロックエディターの出るすべての画面（管理画面のエントリー編集、公開側テーマ上のエントリー編集・ダイレクト編集、ユニットとしてのブロックエディター）で真になるか。公開側のページで読み込まれないか | 各画面でページのソースを見て `index.js` の有無を確認する。判定が合わなければ条件を調整する（例：`ADMIN` の値で絞る、ログインユーザーの権限で絞る）。 |
-| U-2 | `type="module"` のスクリプトで、`register()` の時点に `ACMS.plugins`・`ACMS.Library.React` が存在するか（アセット API のドキュメントでは実行順が保証されている） | コンソールで確認する。存在しない場合は `ACMS.Ready(() => register(…))` で登録する（IIFE は読み込み時に `ACMS.Library.React` を束縛するので特に注意）。 |
-| U-3 | `ctx.config` に値を渡す PHP 側の方法（`jsModule()` が配列を渡せるか、`ACMS.Config` のどこに入るか） | 渡せなければ既定値（`ACMS.Config.root` から組み立てた URL）で動かす。設計はどちらでも動くようにしてある。 |
-| U-4 | `Suggestion` の `allowedPrefixes` で行頭が許可されるか。全角コロンの場合の IME 確定後の挙動 | 動かなければ `findSuggestionMatch` を自前で渡す。 |
-| U-5 | `Mod-Alt-e` がブラウザ・OS・コアのショートカットと衝突しないか | 衝突すれば `Mod-Shift-;` などに変える。 |
-| U-6 | frimousse 0.4 の正確な API 名と、`emojibaseUrl` で必要になるファイル（`data.json`・`messages.json` 以外に要るものがあるか） | 型定義とネットワークタブで確認する。 |
+| U-1 | 【確認済み】 `Hook::afterBuild()` での管理画面の判定（`ADMIN` 定数）が、ブロックエディターの出るすべての画面（管理画面のエントリー編集、公開側テーマ上のエントリー編集・ダイレクト編集、ユニットとしてのブロックエディター）で真になるか。公開側のページで読み込まれないか | 各画面でページのソースを見て `index.js` の有無を確認する。判定が合わなければ条件を調整する（例：`ADMIN` の値で絞る、ログインユーザーの権限で絞る）。 |
+| U-2 | 【要対応だった。7 章 (1)】 `type="module"` のスクリプトで、`register()` の時点に `ACMS.plugins`・`ACMS.Library.React` が存在するか（アセット API のドキュメントでは実行順が保証されている） | コンソールで確認する。存在しない場合は `ACMS.Ready(() => register(…))` で登録する（IIFE は読み込み時に `ACMS.Library.React` を束縛するので特に注意）。 |
+| U-3 | 【既定値で動かしている】 `ctx.config` に値を渡す PHP 側の方法（`jsModule()` が配列を渡せるか、`ACMS.Config` のどこに入るか） | 渡せなければ既定値（`ACMS.Config.root` から組み立てた URL）で動かす。設計はどちらでも動くようにしてある。 |
+| U-4 | 【7 章 (3) のとおり調整】 `Suggestion` の `allowedPrefixes` で行頭が許可されるか。全角コロンの場合の IME 確定後の挙動 | 動かなければ `findSuggestionMatch` を自前で渡す。 |
+| U-5 | 【確認済み】 `Mod-Alt-e` がブラウザ・OS・コアのショートカットと衝突しないか | 衝突すれば `Mod-Shift-;` などに変える。 |
+| U-6 | 【確認済み】 frimousse 0.4 の正確な API 名と、`emojibaseUrl` で必要になるファイル（`data.json`・`messages.json` 以外に要るものがあるか） | 型定義とネットワークタブで確認する。 |
 | R-1 | コア更新で `blockMenu` や `Suggestion` の仕様が変わる | `@ablogcms/*` をコアと同じ版に固定し、コアのアップデート後に受け入れ条件を再確認する（README に記載）。 |
 
 根拠：`@ablogcms/plugins`・`block-editor`・`events`・`i18n`・`types`・`components` 3.2.37 の `.d.ts` と `dist`、ローカルのコア `ablogcms/js/src/admin.js`・`features/block-editor/{tiptap-global,block-definitions}.ts`、`themes/system/_layouts/admin.html`、`frimousse@0.4.0` の dist。
@@ -676,3 +678,38 @@ export function searchEmoji(data: EmojiEntry[], query: string, limit: number): E
 |---|---|---|---|
 | **P1【推奨】** | フルピッカー（検索・カテゴリ・肌の色・最近使った） | どの絵文字でも探せる。frimousse の部品をそのまま使える | 大きく、よく使う 1 つを入れるだけでも視線移動が多い |
 | P2 | クイックパレット（最近 8 ＋ よく使う 8）→「すべて表示」でフル | よく使う絵文字なら 1 クリック。本文を隠さない | 無いときは 1 クリック増える。画面が 2 種類になり作る量が増える |
+
+## 7. 実装で確認したこと・設計から変えた点
+
+実装（`feat/initial-implementation`）で、実機（a-blog cms 3.2、ローカルの管理画面）と自動テストで確かめた結果。
+
+### 未確認事項の結果（6 章）
+
+| # | 結果 |
+|---|---|
+| U-1 | エントリー編集画面（`ADMIN` = `entry_editor`）と一覧などの管理画面で `index.js` / `index.css` が出力される。公開側（`ADMIN` が空）では登録しない（`AssetRegistrar::shouldRegister()`）。公開側テーマ上のダイレクト編集・ユニットとしてのブロックエディターは `ADMIN` が空なので**対象外**（読み込まれない）。必要になったら条件を足す。 |
+| U-2 | **そのままでは不安定**。管理画面の JS（`/js/dest/admin.js`）は `async` で読み込まれるため、`type="module"` のプラグインが先に実行されて `ACMS.plugins` / `ACMS.Library.React` が無いことがある（ドキュメントの「実行順が保証される」は当てにならない）。IIFE は externals を読み込み時に束縛するので `Cannot read properties of undefined (reading 'React')` で落ちる。対策は (1)。 |
+| U-3 | PHP から値は渡していない。`ctx.config.assetsUrl` があればそれを、無ければ `ACMS.Config.root` から組み立てた URL を使う（`frontend/plugin.ts` の `resolveAssetsUrl`）。 |
+| U-4 | 行頭・全角コロンとも動く。ただし `allowedPrefixes` に `' '` などを並べると日本語の直後（`今日は：ねこ`）で出ないため、`allowedPrefixes: null` にして、直前の文字は `allow`（`frontend/position.ts` の `isAllowedPosition`）で判定する。 |
+| U-5 | `Mod-Alt-e`（Mac は ⌘⌥E）で開く。コアが登録しているショートカット（`Mod-E` など）とは衝突しない。ショートカット一覧にも `block-editor` カテゴリで登録した。 |
+| U-6 | frimousse は `${emojibaseUrl}/ja/data.json` と `messages.json` を取得し、`data.json` には ETag 確認の HEAD も飛ばす。それ以外のファイルは要らない。 |
+
+### 設計から変えた点
+
+1. **IIFE を ACMS.plugins の代入まで遅らせる**（vite.config.ts の `BOOT_BANNER` / `BOOT_FOOTER`）。出力全体を関数で包み、`ACMS.plugins` が既にあれば即実行、無ければ `ACMS.plugins` に setter を仕掛けて、`admin.js` が代入した直後に実行する。`ACMS` が無い・代入されないページでは何も実行しない。ビルド成果物の読み込みテスト（`tests/js/bundle-load.test.ts`）で順序の両パターンを検証している。
+2. **`process.env.NODE_ENV` を `define` で固定**。ライブラリモードは置換しないため、frimousse の `process.env.NODE_ENV` がそのまま残り、ブラウザで `ReferenceError` になる。テストで `process.` が残っていないことを検査している。
+3. **サジェストの位置判定を `allow` に集約**（上記 U-4）。コードブロック・インラインコード・直前が英数字（全角含む）のとき出さない。
+4. **サジェストは IME の変換中も表示する**。Suggestion は変換中のテキストにも反応するため、「確定後に出す」とはせず、変換中のキー操作（`isComposing` / `keyCode 229`）を無視することで、確定の Enter で絵文字が入らないようにした。実機の日本語 IME での確認は未了。
+5. **検索順位**：ショートコードの完全一致を最優先にした（`:smile` で 😄 が 😃 より上）。順は 完全一致 > ショートコード前方一致 > 名前前方一致 > タグ前方一致 > 部分一致。
+6. **ピッカーの日本語検索**：frimousse の検索はひらがなとカタカナを区別する（「ねこ」で「ネコ」が出ない）ため、`resolveEmojiData` で名前とタグのひらがな・カタカナ表記をタグに足す（`augmentPickerData`。表示は変えない）。
+7. **ピッカーの読み込み失敗**：frimousse は失敗を `console.error` に出すだけで画面に何も出さない。そこで `defaultEmojiDataResolver` を包んで失敗を検知し、エラーと「再試行」ボタンを表示する。失敗したらリゾルバーの関数を作り直す（frimousse はリゾルバーごとに結果を覚えるため）ので、次に開いたとき再取得される。
+8. **ピッカーの配置**：`@floating-ui/dom` の `autoUpdate` で、中身の読み込み後・スクロール・リサイズのたびに計算し直し、`size` で高さを抑える。`z-index` は管理画面の固定フッター（100015）より前、トースト（100040）より後ろの 100020。ツールバーのボタンから開くとボタンがフォーカスを持ち直すので、開いた直後に検索欄へフォーカスを移す。
+9. **コードブロック内**では、ツールバーの絵文字ボタンは無効、`insertEmoji` / `openEmojiPicker` は何もしない。
+10. **PHP**：`Hook` は `ADMIN` / `DIR_OFFSET` を `protected` メソッド経由で読む（定数は再定義できずテストできないため）。PHPUnit のカバレッジは、コア側のオートローダーがマウント先 `/var/www/html/extension/plugins/BlockEditorEmoji` から読み込むため、`phpunit.coverage.xml.dist` を別に用意し `composer coverage` で測る。Docker のイメージは `3.2-php8.4`、ポートは `.env` の `ACMS_PORT`（18082）。
+11. **リポジトリ構成**：`frontend/plugin.ts`（`setup` と URL 解決）と `frontend/position.ts` を追加し、`index.ts` は `register` だけにした（テストしやすくするため）。テストは `tests/js/` に置き、Tiptap の実物（`@tiptap/core` など）を渡した本物のエディターで統合テストしている。
+12. **CI**：`frontend` ジョブで `npm run coverage`（vitest のカバレッジ）も実行する。
+
+### テストとカバレッジ
+
+- フロントエンド：vitest（jsdom）。純粋関数、React コンポーネント、本物の Tiptap エディターを使った統合テスト、ビルド成果物の読み込みテスト。`npm run coverage` で行カバレッジ 98% 超。
+- バックエンド：PHPUnit（`AssetRegistrar`・`Hook`・`ServiceProvider`）。`composer coverage` で 100%。
