@@ -12,6 +12,7 @@ const entry = (emoji: string, label: string, shortcodes: string[] = []): EmojiEn
   order: 0,
   normLabel: label,
   normTags: [],
+  normCodes: shortcodes,
 });
 const items = [entry('😄', 'にっこり笑う', ['smile']), entry('🐈', 'ねこ', ['cat2']), entry('🐱', '猫の顔')];
 

@@ -269,7 +269,7 @@ describe('候補の更新', () => {
     const editor = mount();
     const render = createSuggestionRender(tiptap);
     const base = { editor, command: () => {}, clientRect: () => new DOMRect(0, 0, 0, 0) };
-    const entry = { emoji: '😄', label: 'x', tags: [], shortcodes: [], order: 0, normLabel: 'x', normTags: [] };
+    const entry = { emoji: '😄', label: 'x', tags: [], shortcodes: [], order: 0, normLabel: 'x', normTags: [], normCodes: [] };
     await act(async () => render.onStart({ ...base, items: [entry] }));
     const popup = document.querySelector('.acms-emoji-popup');
     await act(async () => render.onUpdate({ ...base, items: [], loading: true }));

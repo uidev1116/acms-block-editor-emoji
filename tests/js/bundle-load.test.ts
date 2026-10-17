@@ -88,6 +88,28 @@ describe('ビルド成果物', () => {
     expect(() => vm.runInNewContext(js, none)).not.toThrow();
   });
 
+  it('同じ方法で待っている別のプラグインがあっても、両方とも実行される', () => {
+    const win: any = { ACMS: { Config: {} } };
+    win.window = win;
+    vm.runInNewContext(js, win); // 1 つ目（このバンドル）
+    const second = vi.fn();
+    const prev = Object.getOwnPropertyDescriptor(win.ACMS, 'plugins')!;
+    // 2 つ目のプラグインが、同じ手口で setter を重ねる
+    Object.defineProperty(win.ACMS, 'plugins', {
+      configurable: true,
+      get: prev.get,
+      set(v) {
+        prev.set!.call(win.ACMS, v);
+        second();
+      },
+    });
+    const register = vi.fn();
+    win.ACMS.Library = { React, ReactJsxRuntime };
+    win.ACMS.plugins = { register };
+    expect(second).toHaveBeenCalledTimes(1);
+    expect(register).toHaveBeenCalledTimes(1);
+  });
+
   it('register が例外を投げても、代入した側（admin.js）には伝えない', () => {
     const win: any = { ACMS: { Library: { React, ReactJsxRuntime } } };
     win.window = win;

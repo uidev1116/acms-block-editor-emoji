@@ -33,6 +33,7 @@ export const globals: Record<string, string> = {
  * ある（ACMS.plugins / ACMS.Library.React がまだ無い）。IIFE は externals を読み込み時に束縛するので、
  * 全体を関数で包み、ACMS.plugins が代入された時点（admin.js の初期化の最後）で実行する。
  * ACMS.plugins が最初から有れば即実行。管理画面以外（代入されない）では何も実行しない。
+ * 同じ方法で待っている別のプラグインがあっても、直前の setter を呼んでから実行する（上書きして取りこぼさない）。
  * register() が投げた例外は握りつぶす（setter の中なので、admin.js の初期化を止めてしまうため）。
  */
 const BOOT_BANNER = ';(function(){var __run=function(){try{';
@@ -40,9 +41,12 @@ const BOOT_FOOTER = `}catch(e){console.error('[block-editor-emoji]',e);}};
 var A=window.ACMS;
 if(!A)return;
 if(A.plugins&&A.Library&&A.Library.React){__run();return;}
+var prev=Object.getOwnPropertyDescriptor(A,'plugins');
 var cur=A.plugins;
 Object.defineProperty(A,'plugins',{configurable:true,enumerable:true,get:function(){return cur;},set:function(v){
+cur=v;
 Object.defineProperty(A,'plugins',{configurable:true,enumerable:true,writable:true,value:v});
+if(prev&&prev.set){prev.set.call(A,v);}
 __run();}});
 })();`;
 

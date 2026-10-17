@@ -7,6 +7,7 @@ export interface EmojiEntry {
   /** 検索用に正規化した文字列 */
   normLabel: string;
   normTags: string[];
+  normCodes: string[];
 }
 
 interface RawEmoji {
@@ -41,14 +42,16 @@ export function normalizeData(raw: RawEmoji[], shortcodes: RawShortcodes): Emoji
     }
     const codes = shortcodes[item.hexcode];
     const tags = item.tags ?? [];
+    const list = codes === undefined ? [] : Array.isArray(codes) ? codes : [codes];
     entries.push({
       emoji: item.emoji,
       label: item.label,
       tags,
-      shortcodes: codes === undefined ? [] : Array.isArray(codes) ? codes : [codes],
+      shortcodes: list,
       order: item.order,
       normLabel: normalizeQuery(item.label),
       normTags: tags.map(normalizeQuery),
+      normCodes: list.map((c) => c.toLowerCase()),
     });
   }
   return entries;
@@ -83,7 +86,7 @@ export function resetEmojiDataCache(): void {
 }
 
 function score(entry: EmojiEntry, q: string): number | null {
-  const codes = entry.shortcodes.map((c) => c.toLowerCase());
+  const codes = entry.normCodes;
   if (codes.includes(q)) return 0;
   if (codes.some((c) => c.startsWith(q))) return 1;
   if (entry.normLabel.startsWith(q)) return 2;
