@@ -2,48 +2,48 @@
 
 namespace Acms\Plugins\BlockEditorEmoji;
 
+use Acms\Plugins\BlockEditorEmoji\Services\AssetRegistrar;
+use Acms\Services\Asset\AssetManager;
+use Acms\Services\Facades\Asset;
+
 /**
- * Extension points (hooks).
- *
- * a-blog cms calls a same-named method on the attached hook object *if it exists*, at specific
- * points during request handling. See the bundled hook stub at extension/acms/Hook.php for the
- * full list of available hook methods and their signatures. Remove the methods you don't need.
+ * Extension points (hooks). Keep handlers thin; logic lives in Services.
  */
 class Hook
 {
     /**
-     * Example: extend the template global variables.
+     * Register the JS / CSS only on admin screens (entry edit screen included).
      *
-     * @param \Field $globalVars
+     * @param string $res
      * @return void
      */
-    public function extendsGlobalVars(\Field &$globalVars): void
+    public function afterBuild(&$res)
     {
-        // $globalVars->set('BLOCK_EDITOR_EMOJI_KEY', 'value');
+        $registrar = AssetRegistrar::forDirOffset($this->dirOffset());
+        if (!$registrar->shouldRegister($this->currentAdmin())) {
+            return;
+        }
+        /** @var AssetManager $assets */
+        $assets = Asset::getInstance();
+        $registrar->register($assets);
     }
 
     /**
-     * Example: add a custom cache rule.
+     * Value of the core ADMIN constant ("" on public pages). Overridable for tests, because a
+     * constant cannot be redefined.
      *
-     * @param string $customRuleString
-     * @return void
+     * @return mixed
      */
-    public function addCacheRule(string &$customRuleString): void
+    protected function currentAdmin()
     {
-        // $customRuleString = UA_GROUP; // e.g. vary the cache by device
+        return defined('ADMIN') ? ADMIN : null;
     }
 
     /**
-     * Called while the Twig Environment is being built.
-     * Register Twig filters / functions / extensions here.
-     *
-     * @param \Acms\Services\Template\Twig $twig
-     * @return void
+     * @return string
      */
-    public function extendsTwig(\Acms\Services\Template\Twig $twig): void
+    protected function dirOffset()
     {
-        // $twig->registerFilter('jp_date', fn(string $iso) => date('Y-m-d', strtotime($iso)));
-        // $twig->registerFunction('block_editor_emoji_label', [SampleService::class, 'label']);
-        // $twig->registerExtension(new BlockEditorEmojiTwigExtension());
+        return defined('DIR_OFFSET') ? DIR_OFFSET : '';
     }
 }
