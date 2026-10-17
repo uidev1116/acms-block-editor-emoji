@@ -30,6 +30,8 @@ export const globals: Record<string, string> = {
 
 export default defineConfig(({ mode }) => ({
   plugins: [react()],
+  // ライブラリモードは process.env.NODE_ENV を置換しない。ブラウザには process が無いので固定する
+  define: { 'process.env.NODE_ENV': JSON.stringify(mode === 'development' ? 'development' : 'production') },
   publicDir: false, // 絵文字データはビルド後に scripts/copy-emojibase.mjs でコピーする
   build: {
     outDir: 'src/assets',

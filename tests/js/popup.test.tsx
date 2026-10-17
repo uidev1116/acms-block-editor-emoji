@@ -21,7 +21,7 @@ afterEach(() => {
 describe('createPopup', () => {
   it('body に描画し、props を更新でき、destroy で消える', async () => {
     mounted = mountEditor([]);
-    const popup = createPopup(tiptap, mounted.editor, Probe, { text: 'a' }, rect);
+    const popup = createPopup<{ text: string }, { hello: () => string }>(tiptap, mounted.editor, Probe, { text: 'a' }, rect);
     await act(async () => {});
     expect(document.body.querySelector('.acms-emoji-popup')).not.toBeNull();
     expect(document.body.textContent).toContain('a');

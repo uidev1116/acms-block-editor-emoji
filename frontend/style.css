@@ -1,0 +1,158 @@
+/* ポップアップ（候補リスト・ピッカー）。管理画面の配色（--acms-*）があればそれに合わせる */
+.acms-emoji-popup {
+  --emoji-bg: var(--acms-admin-color-bg, #fff);
+  --emoji-fg: var(--acms-admin-color-text, #222);
+  --emoji-border: var(--acms-admin-color-border, #d5d8dc);
+  --emoji-accent: var(--acms-admin-color-primary, #2b6cb0);
+  --emoji-hover: var(--acms-admin-color-bg-hover, #eef2f7);
+  font-size: 14px;
+  color: var(--emoji-fg);
+}
+
+.acms-emoji-list,
+.acms-emoji-picker {
+  background: var(--emoji-bg);
+  border: 1px solid var(--emoji-border);
+  border-radius: 8px;
+  box-shadow: 0 6px 24px rgb(0 0 0 / 16%);
+}
+
+/* S1：縦リスト */
+.acms-emoji-list {
+  list-style: none;
+  margin: 0;
+  padding: 4px;
+  min-width: 240px;
+  max-width: 360px;
+}
+
+.acms-emoji-list__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.acms-emoji-list__item[aria-selected='true'] {
+  background: var(--emoji-hover);
+  outline: 1px solid var(--emoji-accent);
+}
+
+.acms-emoji-list__emoji {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.acms-emoji-list__label {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.acms-emoji-list__code {
+  color: #6b7280;
+  font-size: 12px;
+}
+
+/* P1：フルピッカー（frimousse） */
+.acms-emoji-picker {
+  display: flex;
+  flex-direction: column;
+  width: 340px;
+  height: 380px;
+  isolation: isolate;
+}
+
+.acms-emoji-picker--error {
+  height: auto;
+  padding: 16px;
+  gap: 8px;
+}
+
+.acms-emoji-picker__search {
+  margin: 8px 8px 4px;
+  padding: 6px 10px;
+  border: 1px solid var(--emoji-border);
+  border-radius: 6px;
+  background: var(--emoji-bg);
+  color: inherit;
+}
+
+.acms-emoji-picker__search:focus {
+  outline: 2px solid var(--emoji-accent);
+  outline-offset: -1px;
+}
+
+.acms-emoji-picker__recent {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--emoji-border);
+}
+
+.acms-emoji-picker__recent-item,
+.acms-emoji-picker [frimousse-emoji] {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.acms-emoji-picker__recent-item:hover,
+.acms-emoji-picker [frimousse-emoji][data-active] {
+  background: var(--emoji-hover);
+}
+
+.acms-emoji-picker__viewport {
+  position: relative;
+  flex: 1;
+  outline: none;
+}
+
+.acms-emoji-picker [frimousse-list] {
+  user-select: none;
+  padding-bottom: 6px;
+}
+
+.acms-emoji-picker [frimousse-category-header] {
+  padding: 8px 12px 4px;
+  background: var(--emoji-bg);
+  color: #6b7280;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.acms-emoji-picker [frimousse-row] {
+  scroll-margin: 4px;
+  padding: 0 8px;
+}
+
+.acms-emoji-picker__status {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6b7280;
+}
+
+.acms-emoji-picker__skin {
+  align-self: flex-end;
+  margin: 4px 8px 8px;
+  padding: 2px 6px;
+  border: 1px solid var(--emoji-border);
+  border-radius: 6px;
+  background: transparent;
+  font-size: 16px;
+  cursor: pointer;
+}

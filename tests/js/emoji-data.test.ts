@@ -124,10 +124,10 @@ describe('loadEmojiData', () => {
   });
 
   it('失敗したら例外を投げ、次回は再取得する', async () => {
-    const fetchMock = vi.fn(async () => ({ ok: false, status: 404, json: async () => ({}) }));
+    const fetchMock = vi.fn(async (_url: string) => ({ ok: false, status: 404, json: async () => ({}) }));
     vi.stubGlobal('fetch', fetchMock);
     await expect(loadEmojiData('/emojibase')).rejects.toThrow(/404/);
-    fetchMock.mockImplementation(async (url: string) => (url.endsWith('github.json') ? ok(github) : ok(raw)) as never);
+    fetchMock.mockImplementation((async (url: string) => (url.endsWith('github.json') ? ok(github) : ok(raw))) as never);
     await expect(loadEmojiData('/emojibase')).resolves.toHaveLength(5);
   });
 
