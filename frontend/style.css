@@ -63,6 +63,7 @@
   flex-direction: column;
   width: 340px;
   height: 380px;
+  max-height: var(--acms-emoji-max-height, 380px);
   isolation: isolate;
 }
 

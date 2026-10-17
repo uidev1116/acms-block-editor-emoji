@@ -65,6 +65,7 @@ describe('createPopup', () => {
     await act(async () => {});
     await popup.updatePosition();
     expect(popup.element.style.position).toBe('fixed');
+    expect(Number(popup.element.style.zIndex)).toBeGreaterThan(100015);
     expect(popup.element.style.visibility).toBe('visible');
     expect(popup.element.style.left).toMatch(/px$/);
   });

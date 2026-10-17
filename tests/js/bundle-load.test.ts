@@ -65,6 +65,29 @@ describe('ビルド成果物', () => {
     expect(register.mock.calls[0][0]).toBe('block-editor-emoji');
   });
 
+  it('admin.js より先に実行されても（ACMS.plugins がまだ無い）例外にならず、代入された時点で register する', () => {
+    const register = vi.fn();
+    const win: any = { ACMS: { Config: { root: '/' } } };
+    win.window = win;
+    expect(() => vm.runInNewContext(js, win)).not.toThrow();
+    expect(register).not.toHaveBeenCalled();
+
+    // admin.js の初期化：Library を置いてから、最後に plugins を代入する
+    win.ACMS.Library = { React, ReactJsxRuntime };
+    win.ACMS.plugins = { register };
+    expect(register).toHaveBeenCalledTimes(1);
+    expect(win.ACMS.plugins.register).toBe(register); // 通常のプロパティに戻っている
+  });
+
+  it('管理画面以外（ACMS.plugins が代入されない）や ACMS が無いページでは何もしない', () => {
+    const win: any = { ACMS: { Library: {}, Config: {} } };
+    win.window = win;
+    expect(() => vm.runInNewContext(js, win)).not.toThrow();
+    const none: any = {};
+    none.window = none;
+    expect(() => vm.runInNewContext(js, none)).not.toThrow();
+  });
+
   it('setup は Tiptap に触れずに完了し、ファクトリは Tiptap の用意後に拡張を返す', async () => {
     const { register, lazy } = loadBundle();
     const ctx = {

@@ -1,6 +1,7 @@
 import { t } from '@ablogcms/i18n';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { EmojiPicker as P, defaultEmojiDataResolver, type EmojiDataResolver } from 'frimousse';
+import { augmentPickerData } from './emoji-data';
 import { getRecent } from './recent';
 
 export interface EmojiPickerProps {
@@ -20,7 +21,7 @@ let resolver: EmojiDataResolver = createResolver();
 function createResolver(): EmojiDataResolver {
   return async (locale, options) => {
     try {
-      return await defaultEmojiDataResolver(locale, options);
+      return augmentPickerData(await defaultEmojiDataResolver(locale, options));
     } catch (e) {
       resolver = createResolver();
       failureListeners.forEach((listener) => listener());
@@ -52,6 +53,13 @@ export function EmojiPicker({ emojibaseUrl, onSelect, onClose }: EmojiPickerProp
   const [attempt, setAttempt] = useState(0);
   const [failed, setFailed] = useState(false);
   const [query, setQuery] = useState('');
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  // ツールバーのボタンから開いたとき、ボタンがフォーカスを持ち直すことがあるので、少し後に検索欄へ移す
+  useEffect(() => {
+    const timer = setTimeout(() => rootRef.current?.querySelector('input')?.focus(), 0);
+    return () => clearTimeout(timer);
+  }, [attempt, failed]);
 
   useEffect(() => {
     const listener = () => setFailed(true);
@@ -81,6 +89,7 @@ export function EmojiPicker({ emojibaseUrl, onSelect, onClose }: EmojiPickerProp
   return (
     <P.Root
       key={attempt}
+      ref={rootRef}
       className="acms-emoji-picker"
       locale="ja"
       emojibaseUrl={emojibaseUrl}

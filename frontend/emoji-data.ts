@@ -84,20 +84,21 @@ export function resetEmojiDataCache(): void {
 
 function score(entry: EmojiEntry, q: string): number | null {
   const codes = entry.shortcodes.map((c) => c.toLowerCase());
-  if (codes.some((c) => c.startsWith(q))) return 0;
-  if (entry.normLabel.startsWith(q)) return 1;
-  if (entry.normTags.some((t) => t.startsWith(q))) return 2;
+  if (codes.includes(q)) return 0;
+  if (codes.some((c) => c.startsWith(q))) return 1;
+  if (entry.normLabel.startsWith(q)) return 2;
+  if (entry.normTags.some((t) => t.startsWith(q))) return 3;
   if (
     entry.normLabel.includes(q) ||
     entry.normTags.some((t) => t.includes(q)) ||
     codes.some((c) => c.includes(q))
   ) {
-    return 3;
+    return 4;
   }
   return null;
 }
 
-/** スコア順：ショートコード前方一致 > 名前前方一致 > タグ前方一致 > 部分一致。同点は order 順 */
+/** スコア順：ショートコード完全一致 > ショートコード前方一致 > 名前前方一致 > タグ前方一致 > 部分一致。同点は order 順 */
 export function searchEmoji(data: EmojiEntry[], query: string, limit: number): EmojiEntry[] {
   const q = normalizeQuery(query);
   if (q === '') return [];
@@ -108,4 +109,30 @@ export function searchEmoji(data: EmojiEntry[], query: string, limit: number): E
   }
   hits.sort((a, b) => a.score - b.score || a.entry.order - b.entry.order);
   return hits.slice(0, limit).map((h) => h.entry);
+}
+
+const toKatakana = (text: string) => text.replace(/[\u3041-\u3096]/g, (c) => String.fromCharCode(c.charCodeAt(0) + 0x60));
+const toHiragana = (text: string) => text.replace(/[\u30A1-\u30F6]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0x60));
+
+interface PickerEmoji {
+  label: string;
+  tags: string[];
+}
+
+/**
+ * frimousse の検索は名前・タグの部分一致で、ひらがなとカタカナを区別する（「ねこ」で「ネコ」が出ない）。
+ * 名前とタグの両方の表記をタグに足して、どちらで入力しても見つかるようにする（表示は変えない）。
+ */
+export function augmentPickerData<T extends { emojis: PickerEmoji[] }>(data: T): T {
+  return {
+    ...data,
+    emojis: data.emojis.map((item) => {
+      const tags = new Set(item.tags);
+      for (const text of [item.label, ...item.tags]) {
+        tags.add(toHiragana(text));
+        tags.add(toKatakana(text));
+      }
+      return { ...item, tags: [...tags] };
+    }),
+  };
 }

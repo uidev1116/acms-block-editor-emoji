@@ -3,6 +3,7 @@ import {
   type EmojiEntry,
   loadEmojiData,
   normalizeData,
+  augmentPickerData,
   normalizeQuery,
   resetEmojiDataCache,
   searchEmoji,
@@ -86,6 +87,17 @@ describe('searchEmoji', () => {
     expect(emojis(searchEmoji(data, 'こり', 8))).toEqual(['😄']);
   });
 
+  it('ショートコードの完全一致は、前方一致より先に出る（:smile で 😄 が 😃 より上）', () => {
+    const d = normalizeData(
+      [
+        { label: 'わーい', hexcode: 'A', emoji: '😃', order: 1, group: 0 },
+        { label: '笑顔', hexcode: 'B', emoji: '😄', order: 2, group: 0 },
+      ],
+      { A: 'smiley', B: 'smile' },
+    );
+    expect(emojis(searchEmoji(d, 'smile', 8))).toEqual(['😄', '😃']);
+  });
+
   it('部分一致は最下位', () => {
     // 'ご' は 'にっこり笑う' に含まれない。'ねこ' の部分一致は '猫の顔' のタグ。ここでは "こ" を使う
     const r = emojis(searchEmoji(data, 'こ', 8));
@@ -137,5 +149,30 @@ describe('loadEmojiData', () => {
     await expect(loadEmojiData('/x')).rejects.toThrow('offline');
     await expect(loadEmojiData('/x')).rejects.toThrow('offline');
     expect(fetchMock).toHaveBeenCalledTimes(4);
+  });
+});
+
+describe('augmentPickerData（ピッカーの検索用）', () => {
+  const base = {
+    locale: 'ja',
+    categories: [],
+    skinTones: {},
+    emojis: [
+      { emoji: '🐈', category: 3, label: 'ネコ', version: 0.7, tags: ['どうぶつ', 'ペット'] },
+      { emoji: '😄', category: 0, label: 'にっこり笑う', version: 0.6, tags: [] },
+    ],
+  } as never;
+
+  it('名前とタグのひらがな・カタカナ表記をタグに足す（frimousse の検索は表記を区別するため）', () => {
+    const out = augmentPickerData(base) as { emojis: { label: string; tags: string[] }[] };
+    expect(out.emojis[0].label).toBe('ネコ'); // 表示は変えない
+    expect(out.emojis[0].tags).toEqual(expect.arrayContaining(['ねこ', 'ネコ', 'どうぶつ', 'ドウブツ', 'ぺっと', 'ペット']));
+    expect(out.emojis[1].tags).toEqual(expect.arrayContaining(['にっこり笑う', 'ニッコリ笑ウ']));
+  });
+
+  it('重複は足さず、元のデータを書き換えない', () => {
+    const out = augmentPickerData(base) as { emojis: { tags: string[] }[] };
+    expect(new Set(out.emojis[0].tags).size).toBe(out.emojis[0].tags.length);
+    expect((base as { emojis: { tags: string[] }[] }).emojis[0].tags).toEqual(['どうぶつ', 'ペット']);
   });
 });

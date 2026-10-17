@@ -1,4 +1,4 @@
-import { computePosition, flip, offset, shift } from '@floating-ui/dom';
+import { autoUpdate, computePosition, flip, offset, shift, size } from '@floating-ui/dom';
 import type { Editor } from '@tiptap/core';
 import type { ComponentType } from 'react';
 import type { Tiptap } from '@ablogcms/block-editor/tiptap';
@@ -44,7 +44,8 @@ export function createPopup<P extends Record<string, unknown>, R = unknown>(
   const element = renderer.element;
   element.classList.add('acms-emoji-popup');
   element.style.position = 'fixed';
-  element.style.zIndex = '10000';
+  // 管理画面の固定ヘッダー・フッター（z-index 100004〜100015）より前、トースト（100040）より後ろに出す
+  element.style.zIndex = '100020';
   element.style.visibility = 'hidden';
   document.body.appendChild(element);
 
@@ -56,6 +57,7 @@ export function createPopup<P extends Record<string, unknown>, R = unknown>(
   document.addEventListener('pointerdown', onPointerDown, true);
 
   let destroyed = false;
+  const reference = (rect: DOMRect) => ({ getBoundingClientRect: () => rect, contextElement: editor.view.dom });
 
   const handle: PopupHandle<P, R> = {
     element,
@@ -67,10 +69,21 @@ export function createPopup<P extends Record<string, unknown>, R = unknown>(
     async updatePosition() {
       const rect = getRect();
       if (!rect || destroyed) return;
-      const { x, y } = await computePosition({ getBoundingClientRect: () => rect }, element, {
+      const { x, y } = await computePosition(reference(rect), element, {
         placement: 'bottom-start',
         strategy: 'fixed',
-        middleware: [offset(4), flip(), shift({ padding: 8 })],
+        middleware: [
+          offset(4),
+          flip(),
+          shift({ padding: 8 }),
+          // 空きが足りないときは、画面からはみ出さないよう高さを抑える（CSS 側が参照する）
+          size({
+            padding: 8,
+            apply({ availableHeight }) {
+              element.style.setProperty('--acms-emoji-max-height', `${Math.max(Math.floor(availableHeight), 160)}px`);
+            },
+          }),
+        ],
       });
       if (destroyed) return;
       element.style.left = `${x}px`;
@@ -86,7 +99,17 @@ export function createPopup<P extends Record<string, unknown>, R = unknown>(
       options.onClose?.();
     },
   };
+  // 中身の読み込みでサイズが変わったり、スクロール・リサイズされたときに位置を計算し直す
+  const stopAutoUpdate = autoUpdate(
+    { getBoundingClientRect: () => getRect() ?? new DOMRect(), contextElement: editor.view.dom },
+    element,
+    () => void handle.updatePosition(),
+  );
+  const baseDestroy = handle.destroy;
+  handle.destroy = () => {
+    stopAutoUpdate();
+    baseDestroy();
+  };
   active = handle;
-  void handle.updatePosition();
   return handle;
 }

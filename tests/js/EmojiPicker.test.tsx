@@ -58,6 +58,17 @@ describe('EmojiPicker', () => {
     expect(fetchMock.mock.calls.every(([u]) => !String(u).includes('jsdelivr'))).toBe(true);
   });
 
+  it('開いたあと、検索欄にフォーカスが移る（ボタンがフォーカスを持っていても）', async () => {
+    stubFetch();
+    const outside = document.createElement('button');
+    document.body.appendChild(outside);
+    outside.focus();
+    render(<EmojiPicker emojibaseUrl="/emojibase" onSelect={vi.fn()} onClose={vi.fn()} />);
+    outside.focus();
+    await waitFor(() => expect(document.activeElement).toBe(screen.getByPlaceholderText('絵文字を検索')));
+    outside.remove();
+  });
+
   it('Esc で onClose', () => {
     stubFetch();
     const onClose = vi.fn();
