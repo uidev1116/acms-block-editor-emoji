@@ -1,0 +1,169 @@
+{#
+  Example plugin settings screen written in Twig (based on the bundled SamplePlugin).
+
+  - acms_config({ blogId: BID }) exposes the plugin config to Twig.
+  - Use config.persisted.get(...) if you only want the stored (non-POST-overloaded) value.
+  - Save notices (config.saved / config.notice) and validation results
+    (config.posted / config.valid / config.invalid / config.errors) are available too.
+
+  Declare validation the same way as a-blog cms standard forms:
+    <input type="hidden" name="config[]" value="key">                             ← key to save
+    <input type="hidden" name="key:validator#method" id="validator-key-method">   ← validator
+#}
+{% set config = acms_config({ blogId: BID }) %}
+
+<header>
+  <div>
+    @include("/admin/topicpath.html")
+  </div>
+  <div>
+    <h1 class="acms-admin-admin-title js-dialog-title">
+      BlockEditorEmoji settings
+    </h1>
+  </div>
+  <div class="acms-admin-col-md-6">
+  </div>
+</header>
+
+{% if config.saved %}
+<div role="alert" class="acms-admin-alert acms-admin-alert-info acms-admin-alert-icon">
+  <span class="acms-admin-icon acms-admin-icon-news acms-admin-alert-icon-before" aria-hidden="true"></span>
+  Settings saved.
+  <button
+    type="button"
+    class="js-acms-alert-close acms-admin-alert-icon-after acms-admin-margin-right-mini"
+    aria-label="Close alert"
+  >
+    ×
+  </button>
+</div>
+{% endif %}
+
+{% if config.posted and not config.valid %}
+<div role="alert" class="acms-admin-alert acms-admin-alert-danger acms-admin-alert-icon">
+  <span class="acms-admin-icon acms-admin-icon-attention acms-admin-alert-icon-before" aria-hidden="true"></span>
+  There are errors in your input.
+  {% if config.errors %}
+    <ul>
+      {% for field, methods in config.errors %}
+        <li>{{ field }}: {{ methods|join(', ') }}</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+</div>
+{% endif %}
+
+<form action="" method="post" class="acms-admin-form">
+  <div class="js-acms_fix_marker acms_fix_bg">
+    <div class="acms_fix_bg_index">
+      <button
+        type="submit"
+        name="ACMS_POST_Config"
+        class="acms-admin-btn-admin acms-admin-btn-admin-primary acms-admin-btn-admin-save js-saving-splash"
+      >
+        Save
+      </button>
+    </div>
+  </div>
+
+  <section>
+    <h2 class="acms-admin-admin-title2">Basic settings</h2>
+    <div class="acms-admin-stack acms-admin-flex-column acms-admin-align-items-stretch" style="--acms-admin-stack-spacing: 1rem;">
+      <div class="acms-admin-cssgrid">
+        <div class="acms-admin-g-col-12 acms-admin-g-col-sm-2">
+          <label for="block_editor_emoji_config_text" class="acms-admin-col-form-label">
+            Sample text<i class="acms-admin-icon-tooltip acms-admin-ms-1 js-acms-tooltip-hover" data-acms-tooltip="Required, max 50 characters"></i>
+          </label>
+        </div>
+        <div class="acms-admin-g-col-12 acms-admin-g-col-sm-10">
+          <input
+            id="block_editor_emoji_config_text"
+            type="text"
+            name="block_editor_emoji_config_text"
+            value="{{ config.get('block_editor_emoji_config_text') }}"
+            class="acms-admin-form-width-medium"
+          />
+          <input type="hidden" name="config[]" value="block_editor_emoji_config_text" />
+          <input type="hidden" name="block_editor_emoji_config_text:validator#required" value="true" id="validator-block_editor_emoji_config_text-required" />
+          <input type="hidden" name="block_editor_emoji_config_text:validator#maxlength" value="50" id="validator-block_editor_emoji_config_text-maxlength" />
+          <div role="alert" aria-live="assertive">
+            <div data-validator-label="validator-block_editor_emoji_config_text-required" class="validator-result-{{ config.invalid('block_editor_emoji_config_text', 'required') ? '0' : '1' }}">
+              <p class="error-text"><span class="acms-admin-icon acms-admin-icon-attention" aria-hidden="true"></span>Please enter the sample text.</p>
+            </div>
+            <div data-validator-label="validator-block_editor_emoji_config_text-maxlength" class="validator-result-{{ config.invalid('block_editor_emoji_config_text', 'maxlength') ? '0' : '1' }}">
+              <p class="error-text"><span class="acms-admin-icon acms-admin-icon-attention" aria-hidden="true"></span>Please keep it within 50 characters.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="acms-admin-cssgrid">
+        <div class="acms-admin-g-col-12 acms-admin-g-col-sm-2">
+          <label for="block_editor_emoji_config_email" class="acms-admin-col-form-label">
+            Email<i class="acms-admin-icon-tooltip acms-admin-ms-1 js-acms-tooltip-hover" data-acms-tooltip="Required, email format"></i>
+          </label>
+        </div>
+        <div class="acms-admin-g-col-12 acms-admin-g-col-sm-10">
+          <input
+            id="block_editor_emoji_config_email"
+            type="text"
+            name="block_editor_emoji_config_email"
+            value="{{ config.get('block_editor_emoji_config_email') }}"
+            class="acms-admin-form-width-medium"
+          />
+          <input type="hidden" name="config[]" value="block_editor_emoji_config_email" />
+          <input type="hidden" name="block_editor_emoji_config_email:validator#required" value="true" id="validator-block_editor_emoji_config_email-required" />
+          <input type="hidden" name="block_editor_emoji_config_email:validator#email" value="true" id="validator-block_editor_emoji_config_email-email" />
+          <div role="alert" aria-live="assertive">
+            <div data-validator-label="validator-block_editor_emoji_config_email-required" class="validator-result-{{ config.invalid('block_editor_emoji_config_email', 'required') ? '0' : '1' }}">
+              <p class="error-text"><span class="acms-admin-icon acms-admin-icon-attention" aria-hidden="true"></span>Please enter an email address.</p>
+            </div>
+            <div data-validator-label="validator-block_editor_emoji_config_email-email" class="validator-result-{{ config.invalid('block_editor_emoji_config_email', 'email') ? '0' : '1' }}">
+              <p class="error-text"><span class="acms-admin-icon acms-admin-icon-attention" aria-hidden="true"></span>Please enter a valid email address.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="acms-admin-cssgrid">
+        <div class="acms-admin-g-col-12 acms-admin-g-col-sm-2">
+          <label for="block_editor_emoji_config_status" class="acms-admin-col-form-label">
+            Status<i class="acms-admin-icon-tooltip acms-admin-ms-1 js-acms-tooltip-hover" data-acms-tooltip="open or close"></i>
+          </label>
+        </div>
+        <div class="acms-admin-g-col-12 acms-admin-g-col-sm-10">
+          <select id="block_editor_emoji_config_status" name="block_editor_emoji_config_status" class="acms-admin-form-width-medium">
+            <option value="open" {{ config.selected('block_editor_emoji_config_status', 'open') }}>Open</option>
+            <option value="close" {{ config.selected('block_editor_emoji_config_status', 'close') }}>Close</option>
+          </select>
+          <input type="hidden" name="config[]" value="block_editor_emoji_config_status" />
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2 class="acms-admin-admin-title2">Notifications</h2>
+    <div class="acms-admin-stack acms-admin-flex-column acms-admin-align-items-stretch" style="--acms-admin-stack-spacing: 1rem;">
+      <div class="acms-admin-cssgrid">
+        <div class="acms-admin-g-col-12 acms-admin-g-col-sm-2">
+          <label for="block_editor_emoji_config_mail" class="acms-admin-col-form-label">
+            Newsletter<i class="acms-admin-icon-tooltip acms-admin-ms-1 js-acms-tooltip-hover" data-acms-tooltip="ON / OFF"></i>
+          </label>
+        </div>
+        <div class="acms-admin-g-col-12 acms-admin-g-col-sm-10">
+          <input type="hidden" name="block_editor_emoji_config_mail" value="off">
+          <div class="acms-admin-form-checkbox">
+            <input
+              type="checkbox"
+              name="block_editor_emoji_config_mail"
+              value="on"
+              {{ config.checked('block_editor_emoji_config_mail', 'on') }}
+              id="block_editor_emoji_config_mail"
+            >
+            <label for="block_editor_emoji_config_mail"><i class="acms-admin-ico-checkbox"></i>Subscribe</label>
+          </div>
+          <input type="hidden" name="config[]" value="block_editor_emoji_config_mail" />
+        </div>
+      </div>
+    </div>
+  </section>
+</form>
