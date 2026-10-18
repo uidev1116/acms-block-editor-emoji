@@ -57,7 +57,7 @@ final class ServiceProviderTest extends TestCase
     {
         $provider = new ServiceProvider();
 
-        $this->assertTrue($provider->checkRequirements());
+        $this->assertTrue($provider->checkRequirements()); // テスト環境のコア（3.2.37）は条件を満たす
         $this->assertTrue($provider->update());
         $this->assertTrue($provider->activate());
         $this->assertTrue($provider->deactivate());

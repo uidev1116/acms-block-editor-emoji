@@ -3,6 +3,7 @@
 namespace Acms\Plugins\BlockEditorEmoji;
 
 use ACMS_App;
+use Acms\Plugins\BlockEditorEmoji\Services\Requirements;
 use Acms\Services\Common\HookFactory;
 use Acms\Services\Common\InjectTemplate;
 use Acms\Services\Facades\Twig;
@@ -11,8 +12,8 @@ use Acms\Services\Facades\Twig;
  * Plugin (extension app) registration class.
  *
  * The production code lives in `src/`, which is deployed as `extension/plugins/BlockEditorEmoji/`.
- * The JS / CSS (`src/assets/`) are built from `frontend/` and committed, because the deploy only
- * rsyncs `src/`.
+ * The JS / CSS (`src/assets/`) are built from `frontend/` (not committed; the release workflow
+ * builds them into the package).
  */
 class ServiceProvider extends ACMS_App
 {
@@ -82,7 +83,7 @@ class ServiceProvider extends ACMS_App
      */
     public function checkRequirements()
     {
-        return true;
+        return Requirements::isSupported(defined('VERSION') ? VERSION : null);
     }
 
     /**
