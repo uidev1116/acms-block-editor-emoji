@@ -284,7 +284,7 @@ export default defineConfig(({ mode }) => ({
     // Vite 8 は Rolldown。rollupOptions は互換エイリアスとして残っているが、新しい名前は rolldownOptions
     rolldownOptions: {
       external: (id) => id in globals,
-      output: { globals, banner: BOOT_BANNER, footer: BOOT_FOOTER }, // 7 章 (1)：実行を ACMS.plugins の代入まで遅らせる
+      output: { globals, banner: BOOT_BANNER, footer: BOOT_FOOTER }, // 7 章 (1)：実行を ACMS.adminReady まで遅らせる
     },
   },
 }));
