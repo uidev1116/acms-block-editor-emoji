@@ -7,6 +7,7 @@ namespace Acms\Plugins\BlockEditorEmoji\Tests\Unit;
 use Acms\Plugins\BlockEditorEmoji\Hook;
 use Acms\Services\Asset\AssetManager;
 use Acms\Services\Facades\Asset;
+use Acms\Services\Template\Twig;
 use Acms\TestingFramework\TestCase;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\TestDox;
@@ -19,11 +20,36 @@ final class HookTest extends TestCase
         parent::tearDown();
     }
 
-    private function hook(mixed $admin, string $dirOffset = ''): Hook
+    /**
+     * @param \ArrayObject<string, callable> $registered
+     */
+    private function callRegistered(\ArrayObject $registered, string $name): mixed
     {
-        return new class ($admin, $dirOffset) extends Hook {
-            public function __construct(private mixed $admin, private string $offset)
+        $callable = $registered[$name] ?? null;
+        $this->assertIsCallable($callable);
+
+        return $callable();
+    }
+
+    private function hook(mixed $admin, string $dirOffset = '', bool $enabled = true, string $charset = 'utf8mb4'): Hook
+    {
+        return new class ($admin, $dirOffset, $enabled, $charset) extends Hook {
+            public function __construct(
+                private mixed $admin,
+                private string $offset,
+                private bool $enabledSetting,
+                private string $charset
+            ) {
+            }
+
+            protected function isEnabled()
             {
+                return $this->enabledSetting;
+            }
+
+            protected function dbCharset()
+            {
+                return $this->charset;
             }
 
             protected function currentAdmin()
@@ -93,5 +119,61 @@ final class HookTest extends TestCase
 
         $res = '';
         (new Hook())->afterBuild($res);
+    }
+
+    #[Test]
+    #[TestDox('afterBuild() does nothing when the setting is off, even on an admin screen')]
+    public function doesNothingWhenSettingIsOff(): void
+    {
+        $manager = $this->createMock(AssetManager::class);
+        $manager->expects($this->never())->method('script');
+        $manager->expects($this->never())->method('style');
+        Asset::swap($manager);
+
+        $res = '<html></html>';
+        $this->hook('entry_editor', '', false)->afterBuild($res);
+    }
+
+    #[Test]
+    #[TestDox('extendsTwig() registers the DB charset functions for the settings screen')]
+    public function extendsTwigRegistersFunctions(): void
+    {
+        /** @var \ArrayObject<string, callable> $registered */
+        $registered = new \ArrayObject();
+        $twig = $this->createMock(Twig::class);
+        $twig->method('registerFunction')->willReturnCallback(
+            function (string $name, callable $callable) use ($registered): void {
+                $registered[$name] = $callable;
+            }
+        );
+
+        $this->hook('app_block_editor_emoji_index', '', true, 'utf8mb4')->extendsTwig($twig);
+        $this->assertSame('utf8mb4', $this->callRegistered($registered, 'block_editor_emoji_db_charset'));
+        $this->assertTrue($this->callRegistered($registered, 'block_editor_emoji_db_ready'));
+
+        $registered->exchangeArray([]);
+        $this->hook('app_block_editor_emoji_index', '', true, '')->extendsTwig($twig);
+        $this->assertSame('', $this->callRegistered($registered, 'block_editor_emoji_db_charset'));
+        $this->assertFalse($this->callRegistered($registered, 'block_editor_emoji_db_ready'));
+    }
+
+    #[Test]
+    #[TestDox('the real Hook reads the core DB charset constant and the default setting is on')]
+    public function realHookDefaults(): void
+    {
+        $hook = new class extends Hook {
+            public function enabled(): bool
+            {
+                return $this->isEnabled();
+            }
+
+            public function charset(): string
+            {
+                return $this->dbCharset();
+            }
+        };
+
+        $this->assertTrue($hook->enabled());
+        $this->assertSame((string) DB_CONNECTION_CHARSET, $hook->charset());
     }
 }

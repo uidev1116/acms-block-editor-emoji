@@ -4,6 +4,8 @@ namespace Acms\Plugins\BlockEditorEmoji;
 
 use ACMS_App;
 use Acms\Services\Common\HookFactory;
+use Acms\Services\Common\InjectTemplate;
+use Acms\Services\Facades\Twig;
 
 /**
  * Plugin (extension app) registration class.
@@ -37,7 +39,7 @@ class ServiceProvider extends ACMS_App
     /**
      * @var false|string
      */
-    public $menu = false;
+    public $menu = 'block_editor_emoji_index';
 
     /**
      * @var string
@@ -52,6 +54,27 @@ class ServiceProvider extends ACMS_App
     public function init()
     {
         HookFactory::singleton()->attach('BlockEditorEmojiHook', new Hook());
+
+        Twig::addTemplatePath(PLUGIN_LIB_DIR . 'BlockEditorEmoji/template', 'block_editor_emoji');
+        $this->registerSettingsScreen(defined('ADMIN') ? ADMIN : null);
+    }
+
+    /**
+     * Settings screen (opened from the app list; a Twig page). Only injected on its own screen.
+     *
+     * @param mixed $admin Value of the core ADMIN constant
+     * @return void
+     */
+    public function registerSettingsScreen($admin)
+    {
+        if ($admin !== 'app_' . $this->menu) {
+            return;
+        }
+        $inject = InjectTemplate::singleton();
+        $inject->add('admin-main', static function (): string {
+            return Twig::renderTemplate('@block_editor_emoji/admin/main.twig');
+        });
+        $inject->add('admin-topicpath', PLUGIN_DIR . 'BlockEditorEmoji/template/admin/topicpath.html');
     }
 
     /**

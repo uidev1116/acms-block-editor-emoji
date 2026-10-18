@@ -7,6 +7,7 @@ namespace Acms\Plugins\BlockEditorEmoji\Tests\Unit;
 use Acms\Plugins\BlockEditorEmoji\Hook;
 use Acms\Plugins\BlockEditorEmoji\ServiceProvider;
 use Acms\Services\Common\HookFactory;
+use Acms\Services\Common\InjectTemplate;
 use Acms\TestingFramework\TestCase;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\TestDox;
@@ -22,7 +23,7 @@ final class ServiceProviderTest extends TestCase
         $this->assertSame('BlockEditorEmoji', $provider->name);
         $this->assertSame('uidev1116', $provider->author);
         $this->assertFalse($provider->module);
-        $this->assertFalse($provider->menu);
+        $this->assertSame('block_editor_emoji_index', $provider->menu);
         $this->assertMatchesRegularExpression('/^\d+\.\d+\.\d+$/', $provider->version);
     }
 
@@ -33,6 +34,21 @@ final class ServiceProviderTest extends TestCase
         (new ServiceProvider())->init();
 
         $this->assertInstanceOf(Hook::class, HookFactory::singleton()->getHook('BlockEditorEmojiHook'));
+    }
+
+    #[Test]
+    #[TestDox('registerSettingsScreen() injects the settings page only on its own screen')]
+    public function settingsScreenIsInjectedOnlyOnItsOwnScreen(): void
+    {
+        $inject = InjectTemplate::singleton();
+        $before = count($inject->get('admin-main'));
+
+        (new ServiceProvider())->registerSettingsScreen('entry_editor');
+        $this->assertCount($before, $inject->get('admin-main'));
+
+        (new ServiceProvider())->registerSettingsScreen('app_block_editor_emoji_index');
+        $this->assertCount($before + 1, $inject->get('admin-main'));
+        $this->assertNotEmpty($inject->get('admin-topicpath'));
     }
 
     #[Test]

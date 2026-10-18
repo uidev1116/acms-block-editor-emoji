@@ -715,7 +715,9 @@ export function searchEmoji(data: EmojiEntry[], query: string, limit: number): E
 17. **ツールチップのショートカット表示**は Mac では ⌘⌥E、それ以外では Ctrl+Alt+E。ショートカット一覧のラベルは `setup()` の時点では翻訳が使えないため日本語固定（英語 UI でも日本語。要判断）。
 18. **ビルド済みの JS を Git に含めない**（設計書の初版では含める想定だった）。`src/assets/` は `.gitignore` し、`release.yml` がタグ時にビルドして zip にだけ含める。`test.yml` の `git diff --exit-code src/assets` は無くした。
 19. **CSS のクラス名**は管理画面用の接頭辞 `acms-admin-` に合わせて `acms-admin-emoji-*`（ポップアップは `acms-admin-emoji-popup`）にした。
-20. **CI**：`frontend` ジョブで `npm run coverage`（vitest のカバレッジ）も実行する。
+20. **絵文字を保存できる DB のときだけ有効にする**。コアのライトエディターの絵文字ピッカーと同じ条件で、`ACMS.Config.dbCharset`（`config.server.php` の `DB_CONNECTION_CHARSET`）が `utf8mb4` のときだけ拡張を登録する。そうでないと、保存した絵文字が `?` などに化ける。満たさないときは `console.info` を出して何も登録しない（`frontend/plugin.ts` の `canStoreEmoji`）。コアのライトエディターは加えて `LiteEditorUseEmojiPicker` の設定とモバイルかどうかも見ているが、前者はライトエディター用の設定なので見ていない。後者は、サジェストが OS の絵文字キーボードの邪魔にならないため見ていない。
+21. **設定画面（オン／オフ）**を追加した。拡張アプリの一覧の「設定」から開く Twig 製のページ（`src/template/admin/main.twig`）で、ブログごとに `block_editor_emoji_enabled`（`on` が既定、`off`）を標準の `ACMS_POST_Config` で保存する。`off` のとき `Hook::afterBuild()` が JS / CSS を登録しない。DB の接続文字コードが `utf8mb4` でないときは、画面に警告を出す。
+22. **CI**：`frontend` ジョブで `npm run coverage`（vitest のカバレッジ）も実行する。
 
 ### テストとカバレッジ
 

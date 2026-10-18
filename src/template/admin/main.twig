@@ -1,0 +1,77 @@
+{#
+  BlockEditorEmoji の設定画面。ブログごとに、絵文字の入力（サジェストとピッカー）をオン／オフできる。
+  保存は a-blog cms 標準の ACMS_POST_Config（config[] で指定したキーを保存する）。
+#}
+{% set config = acms_config({ blogId: BID }) %}
+{% set charset = block_editor_emoji_db_charset() %}
+{% set dbReady = block_editor_emoji_db_ready() %}
+
+<header>
+  <div>
+    @include("/admin/topicpath.html")
+  </div>
+  <div>
+    <h1 class="acms-admin-admin-title js-dialog-title">
+      絵文字（BlockEditorEmoji）
+    </h1>
+  </div>
+</header>
+
+{% if config.saved %}
+<div role="alert" class="acms-admin-alert acms-admin-alert-info acms-admin-alert-icon">
+  <span class="acms-admin-icon acms-admin-icon-news acms-admin-alert-icon-before" aria-hidden="true"></span>
+  設定を保存しました。
+  <button
+    type="button"
+    class="js-acms-alert-close acms-admin-alert-icon-after acms-admin-margin-right-mini"
+    aria-label="閉じる"
+  >
+    ×
+  </button>
+</div>
+{% endif %}
+
+{% if not dbReady %}
+<div role="alert" class="acms-admin-alert acms-admin-alert-warn acms-admin-alert-icon">
+  <span class="acms-admin-icon acms-admin-icon-attention acms-admin-alert-icon-before" aria-hidden="true"></span>
+  DB の接続文字コードが <strong>{{ charset ?: 'utf8（utf8mb3）' }}</strong> のため、絵文字などの4バイト文字を保存すると壊れます。
+  このままでは、設定がオンでもブロックエディターの絵文字の入力は無効のままです。
+  config.server.php に <code>define('DB_CONNECTION_CHARSET', 'utf8mb4');</code> を設定し、カラムも utf8mb4 に変換してください。
+</div>
+{% endif %}
+
+<form action="" method="post" class="acms-admin-form">
+  <div class="js-acms_fix_marker acms_fix_bg">
+    <div class="acms_fix_bg_index">
+      <button
+        type="submit"
+        name="ACMS_POST_Config"
+        class="acms-admin-btn-admin acms-admin-btn-admin-primary acms-admin-btn-admin-save js-saving-splash"
+      >
+        保存
+      </button>
+    </div>
+  </div>
+
+  <section>
+    <h2 class="acms-admin-admin-title2">ブロックエディター</h2>
+    <div class="acms-admin-stack acms-admin-flex-column acms-admin-align-items-stretch" style="--acms-admin-stack-spacing: 1rem;">
+      <div class="acms-admin-cssgrid">
+        <div class="acms-admin-g-col-12 acms-admin-g-col-sm-2">
+          <span class="acms-admin-col-form-label">絵文字の入力</span>
+        </div>
+        <div class="acms-admin-g-col-12 acms-admin-g-col-sm-10">
+          <div class="acms-admin-form-radio">
+            <input type="radio" name="block_editor_emoji_enabled" value="on" id="block_editor_emoji_enabled_on" {{ config.checked('block_editor_emoji_enabled', 'on') }}{% if not config.get('block_editor_emoji_enabled') %} checked{% endif %}>
+            <label for="block_editor_emoji_enabled_on"><i class="acms-admin-ico-radio"></i>オン（<code>:</code> のサジェストとツールバーのピッカーを使う）</label>
+          </div>
+          <div class="acms-admin-form-radio">
+            <input type="radio" name="block_editor_emoji_enabled" value="off" id="block_editor_emoji_enabled_off" {{ config.checked('block_editor_emoji_enabled', 'off') }}>
+            <label for="block_editor_emoji_enabled_off"><i class="acms-admin-ico-radio"></i>オフ</label>
+          </div>
+          <input type="hidden" name="config[]" value="block_editor_emoji_enabled" />
+        </div>
+      </div>
+    </div>
+  </section>
+</form>
