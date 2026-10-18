@@ -177,7 +177,7 @@ acms-block-editor-emoji/                 ← GitHub: uidev1116/acms-block-editor
     ├── ServiceProvider.php           # $version がバージョンの正（タグと一致させる）
     ├── Hook.php                      # afterBuild() → AssetRegistrar（3.5）
     ├── Services/AssetRegistrar.php   # 読み込み判定とパス組み立て（PHPUnit で単体テスト）
-    └── assets/                       # vite build の出力（コミットする）
+    └── assets/                       # vite build の出力（Git には含めない。リリース時にビルドして zip にだけ含める）
         ├── index.js
         ├── index.css
         └── emojibase/               # ja/data.json, ja/messages.json, en/shortcodes/github.json
@@ -389,8 +389,8 @@ class Hook
 | リポジトリ | `uidev1116/acms-block-editor-emoji`（public。ApiPreview と同じ）。既定ブランチは `master`。初回コミット（スケルトンを置換しただけの状態）だけを `master` に置き、実装は `feat/initial-implementation` ブランチで行って PR を出す。マージは人が行う。 |
 | バックエンドへの取り込み | `git submodule add git@github.com:uidev1116/acms-block-editor-emoji.git plugins/BlockEditorEmoji`（`.gitmodules` は既存の ApiPreview と同じ SSH URL。デプロイの CI は HTTPS に読み替える）。`npm run setup`（`tools/setup.js`）が `ablogcms/extension/plugins/BlockEditorEmoji → ../../../plugins/BlockEditorEmoji/src` のシンボリックリンクを作る。Docker の web コンテナは `./plugins` を `/var/www/plugins` にマウントしているので、このリンクがそのまま効く。 |
 | `npm run setup` | `tools/setup.js` は各 submodule で `npm ci` → `npm run setup` を実行するので、`package.json` に `setup` スクリプトが**必須**（`"setup": "npm run build"`）。 |
-| ビルド成果物 | `src/assets/` をコミットする。バックエンドのデプロイは `plugins/BlockEditorEmoji/src/` をそのまま rsync し、プラグインのビルドはしないため。CI で「ビルドし直しても差分が出ない」ことを検査して、コミット漏れを防ぐ。 |
-| CI（`test.yml`） | スケルトンの `quality`（phpcs・PHPStan）と `phpunit`（PHP 8.1〜8.5 × a-blog cms 3.2）はそのまま使い、`frontend` ジョブを追加する：`setup-node`（`.node-version`）→ `npm ci` → `npm run typecheck` → `npm test` → `npm run build` → `git diff --exit-code src/assets`。集約ジョブ `test` の `needs` に `frontend` を足す。 |
+| ビルド成果物 | `src/assets/` は **Git に含めない**（`.gitignore`）。リリース時（`v*` タグ）に `release.yml` が `npm ci && npm run build` でビルドし、配布用の zip にだけ含める。`test.yml` の `frontend` ジョブでも、ビルドが通り成果物ができることだけを確認する。ローカルでは `npm run setup`（= `npm run build`）で作る。**バックエンドの現行デプロイ（`plugins/*/src` の rsync）はビルドしないため、そのままでは `assets/` が本番に届かない**。本番へは、リリースの zip を展開して反映するか、バックエンドのデプロイにビルド手順を足す必要がある（7 章の要判断事項）。 |
+| CI（`test.yml`） | スケルトンの `quality`（phpcs・PHPStan）と `phpunit`（PHP 8.1〜8.5 × a-blog cms 3.2）はそのまま使い、`frontend` ジョブを追加する：`setup-node`（`.node-version`）→ `npm ci` → `npm run typecheck` → `npm run coverage` → `npm run build` → 成果物ができていること。集約ジョブ `test` の `needs` に `frontend` を足す。 |
 | リリース | スケルトンのまま。`composer release:patch` などで `ServiceProvider::$version` を上げてタグを打ち、push すると `release.yml` が zip を GitHub Release に公開する。`package.json` の `version` と `frontend/index.ts` の `version` も同じ値にそろえる。 |
 | 本番デプロイ | プラグインの PR をマージした後、バックエンドで submodule の参照先を更新してコミットし、既存のデプロイ（`.github/workflows/deploy.yml`、rsync）で反映する。デプロイのワークフローは変更しない。**デプロイは明示的に許可されたときだけ**行う。 |
 
@@ -558,7 +558,7 @@ import { EmojiPicker as P } from 'frimousse';
 export function EmojiPicker({ emojibaseUrl, onSelect, onClose }: Props) {
   return (
     <P.Root
-      className="acms-emoji-picker"
+      className="acms-admin-emoji-picker"
       locale="ja"
       emojibaseUrl={emojibaseUrl}
       columns={9}
@@ -713,7 +713,9 @@ export function searchEmoji(data: EmojiEntry[], query: string, limit: number): E
 15. **IIFE のラッパー**は `register()` の例外を握りつぶして `console.error` に出す（`adminReady` の通知を止めないため）。
 16. **ポップアップの破棄はエディター単位**：エディターを破棄したとき、そのエディターのポップアップだけ閉じる（`closeActivePopup(editor)`）。
 17. **ツールチップのショートカット表示**は Mac では ⌘⌥E、それ以外では Ctrl+Alt+E。ショートカット一覧のラベルは `setup()` の時点では翻訳が使えないため日本語固定（英語 UI でも日本語。要判断）。
-18. **CI**：`frontend` ジョブで `npm run coverage`（vitest のカバレッジ）も実行する。
+18. **ビルド済みの JS を Git に含めない**（設計書の初版では含める想定だった）。`src/assets/` は `.gitignore` し、`release.yml` がタグ時にビルドして zip にだけ含める。`test.yml` の `git diff --exit-code src/assets` は無くした。
+19. **CSS のクラス名**は管理画面用の接頭辞 `acms-admin-` に合わせて `acms-admin-emoji-*`（ポップアップは `acms-admin-emoji-popup`）にした。
+20. **CI**：`frontend` ジョブで `npm run coverage`（vitest のカバレッジ）も実行する。
 
 ### テストとカバレッジ
 

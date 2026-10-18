@@ -1,5 +1,5 @@
 /* ポップアップ（候補リスト・ピッカー）。管理画面の配色（--acms-*）があればそれに合わせる */
-.acms-emoji-popup {
+.acms-admin-emoji-popup {
   --emoji-bg: var(--acms-admin-color-bg, #fff);
   --emoji-fg: var(--acms-admin-color-text, #222);
   --emoji-border: var(--acms-admin-color-border, #d5d8dc);
@@ -9,8 +9,8 @@
   color: var(--emoji-fg);
 }
 
-.acms-emoji-list,
-.acms-emoji-picker {
+.acms-admin-emoji-list,
+.acms-admin-emoji-picker {
   background: var(--emoji-bg);
   border: 1px solid var(--emoji-border);
   border-radius: 8px;
@@ -18,7 +18,7 @@
 }
 
 /* S1：縦リスト */
-.acms-emoji-list {
+.acms-admin-emoji-list {
   list-style: none;
   margin: 0;
   padding: 4px;
@@ -26,7 +26,7 @@
   max-width: 360px;
 }
 
-.acms-emoji-list__item {
+.acms-admin-emoji-list__item {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -35,45 +35,45 @@
   cursor: pointer;
 }
 
-.acms-emoji-list__item[aria-selected='true'] {
+.acms-admin-emoji-list__item[aria-selected='true'] {
   background: var(--emoji-hover);
   outline: 1px solid var(--emoji-accent);
 }
 
-.acms-emoji-list__emoji {
+.acms-admin-emoji-list__emoji {
   font-size: 20px;
   line-height: 1;
 }
 
-.acms-emoji-list__label {
+.acms-admin-emoji-list__label {
   flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.acms-emoji-list__code {
+.acms-admin-emoji-list__code {
   color: #6b7280;
   font-size: 12px;
 }
 
 /* P1：フルピッカー（frimousse） */
-.acms-emoji-picker {
+.acms-admin-emoji-picker {
   display: flex;
   flex-direction: column;
   width: 340px;
   height: 380px;
-  max-height: var(--acms-emoji-max-height, 380px);
+  max-height: var(--acms-admin-emoji-max-height, 380px);
   isolation: isolate;
 }
 
-.acms-emoji-picker--error {
+.acms-admin-emoji-picker--error {
   height: auto;
   padding: 16px;
   gap: 8px;
 }
 
-.acms-emoji-picker__search {
+.acms-admin-emoji-picker__search {
   margin: 8px 8px 4px;
   padding: 6px 10px;
   border: 1px solid var(--emoji-border);
@@ -82,12 +82,12 @@
   color: inherit;
 }
 
-.acms-emoji-picker__search:focus {
+.acms-admin-emoji-picker__search:focus {
   outline: 2px solid var(--emoji-accent);
   outline-offset: -1px;
 }
 
-.acms-emoji-picker__recent {
+.acms-admin-emoji-picker__recent {
   display: flex;
   flex-wrap: wrap;
   gap: 2px;
@@ -95,8 +95,8 @@
   border-bottom: 1px solid var(--emoji-border);
 }
 
-.acms-emoji-picker__recent-item,
-.acms-emoji-picker [frimousse-emoji] {
+.acms-admin-emoji-picker__recent-item,
+.acms-admin-emoji-picker [frimousse-emoji] {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -109,23 +109,23 @@
   cursor: pointer;
 }
 
-.acms-emoji-picker__recent-item:hover,
-.acms-emoji-picker [frimousse-emoji][data-active] {
+.acms-admin-emoji-picker__recent-item:hover,
+.acms-admin-emoji-picker [frimousse-emoji][data-active] {
   background: var(--emoji-hover);
 }
 
-.acms-emoji-picker__viewport {
+.acms-admin-emoji-picker__viewport {
   position: relative;
   flex: 1;
   outline: none;
 }
 
-.acms-emoji-picker [frimousse-list] {
+.acms-admin-emoji-picker [frimousse-list] {
   user-select: none;
   padding-bottom: 6px;
 }
 
-.acms-emoji-picker [frimousse-category-header] {
+.acms-admin-emoji-picker [frimousse-category-header] {
   padding: 8px 12px 4px;
   background: var(--emoji-bg);
   color: #6b7280;
@@ -133,12 +133,12 @@
   font-weight: 600;
 }
 
-.acms-emoji-picker [frimousse-row] {
+.acms-admin-emoji-picker [frimousse-row] {
   scroll-margin: 4px;
   padding: 0 8px;
 }
 
-.acms-emoji-picker__status {
+.acms-admin-emoji-picker__status {
   position: absolute;
   inset: 0;
   display: flex;
@@ -147,7 +147,7 @@
   color: #6b7280;
 }
 
-.acms-emoji-picker__skin {
+.acms-admin-emoji-picker__skin {
   align-self: flex-end;
   margin: 4px 8px 8px;
   padding: 2px 6px;

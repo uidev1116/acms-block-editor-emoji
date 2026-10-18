@@ -31,7 +31,7 @@ async function type(editor: ReturnType<typeof mount>, text: string) {
   await flush();
 }
 
-const list = () => document.body.querySelector('.acms-emoji-list');
+const list = () => document.body.querySelector('.acms-admin-emoji-list');
 const options = () => [...document.body.querySelectorAll('[role="option"]')];
 
 function press(editor: ReturnType<typeof mount>, key: string, init: KeyboardEventInit = {}) {
@@ -185,7 +185,7 @@ describe('コマンドとショートカット', () => {
     expect(editor.commands.insertEmoji('😄')).toBe(false);
     expect(editor.commands.openEmojiPicker()).toBe(false);
     expect(editor.getHTML()).not.toContain('😄');
-    expect(document.querySelector('.acms-emoji-picker')).toBeNull();
+    expect(document.querySelector('.acms-admin-emoji-picker')).toBeNull();
   });
 
   it('ツールバーの項目が宣言されている（scope: text、add_reaction、コードブロックでは無効）', () => {
@@ -204,11 +204,11 @@ describe('コマンドとショートカット', () => {
     const ext = editor.extensionManager.extensions.find((e) => e.name === 'emojiInput')!;
     await act(async () => ext.options.blockMenu[0].onSelect(editor));
     await flush();
-    expect(document.querySelector('.acms-emoji-picker')).not.toBeNull();
+    expect(document.querySelector('.acms-admin-emoji-picker')).not.toBeNull();
 
     // 選択を動かしても、保存した範囲に入る
     editor.commands.setTextSelection(3);
-    const props = (document.querySelector('.acms-emoji-popup') as HTMLElement).querySelector('.acms-emoji-picker__recent');
+    const props = (document.querySelector('.acms-admin-emoji-popup') as HTMLElement).querySelector('.acms-admin-emoji-picker__recent');
     expect(props).toBeNull();
   });
 
@@ -216,10 +216,10 @@ describe('コマンドとショートカット', () => {
     const editor = mount();
     press(editor, 'e', { key: 'e', ctrlKey: true, altKey: true });
     await flush();
-    expect(document.querySelector('.acms-emoji-picker')).not.toBeNull();
+    expect(document.querySelector('.acms-admin-emoji-picker')).not.toBeNull();
     document.body.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true }));
     await flush();
-    expect(document.querySelector('.acms-emoji-picker')).toBeNull();
+    expect(document.querySelector('.acms-admin-emoji-picker')).toBeNull();
   });
 
   it('ピッカーを開くとサジェストは閉じる', async () => {
@@ -231,7 +231,7 @@ describe('コマンドとショートカット', () => {
     });
     await flush();
     expect(list()).toBeNull();
-    expect(document.querySelectorAll('.acms-emoji-popup')).toHaveLength(1);
+    expect(document.querySelectorAll('.acms-admin-emoji-popup')).toHaveLength(1);
   });
 
   it('エディターを破棄するとポップアップも消える', async () => {
@@ -240,7 +240,7 @@ describe('コマンドとショートカット', () => {
       editor.commands.openEmojiPicker();
     });
     editor.destroy();
-    expect(document.querySelector('.acms-emoji-popup')).toBeNull();
+    expect(document.querySelector('.acms-admin-emoji-popup')).toBeNull();
   });
 });
 
@@ -259,10 +259,10 @@ describe('候補の更新', () => {
   it('入力を続けても、リストを作り直さない（ちらつき防止）', async () => {
     const editor = mount();
     await type(editor, ':sm');
-    const first = document.querySelector('.acms-emoji-popup');
+    const first = document.querySelector('.acms-admin-emoji-popup');
     expect(first).not.toBeNull();
     await type(editor, 'i');
-    expect(document.querySelector('.acms-emoji-popup')).toBe(first);
+    expect(document.querySelector('.acms-admin-emoji-popup')).toBe(first);
   });
 
   it('候補の取得中（loading）は前の表示を保つ', async () => {
@@ -271,11 +271,11 @@ describe('候補の更新', () => {
     const base = { editor, command: () => {}, clientRect: () => new DOMRect(0, 0, 0, 0) };
     const entry = { emoji: '😄', label: 'x', tags: [], shortcodes: [], order: 0, normLabel: 'x', normTags: [], normCodes: [] };
     await act(async () => render.onStart({ ...base, items: [entry] }));
-    const popup = document.querySelector('.acms-emoji-popup');
+    const popup = document.querySelector('.acms-admin-emoji-popup');
     await act(async () => render.onUpdate({ ...base, items: [], loading: true }));
-    expect(document.querySelector('.acms-emoji-popup')).toBe(popup);
+    expect(document.querySelector('.acms-admin-emoji-popup')).toBe(popup);
     await act(async () => render.onUpdate({ ...base, items: [] }));
-    expect(document.querySelector('.acms-emoji-popup')).toBeNull();
+    expect(document.querySelector('.acms-admin-emoji-popup')).toBeNull();
     render.onExit();
   });
 
@@ -286,6 +286,6 @@ describe('候補の更新', () => {
     });
     const other = mountEditor([createEmojiExtension(tiptap, { emojibaseUrl: '/emojibase' })]);
     other.unmount();
-    expect(document.querySelector('.acms-emoji-popup')).not.toBeNull();
+    expect(document.querySelector('.acms-admin-emoji-popup')).not.toBeNull();
   });
 });

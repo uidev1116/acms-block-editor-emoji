@@ -23,7 +23,7 @@ describe('createPopup', () => {
     mounted = mountEditor([]);
     const popup = createPopup<{ text: string }, { hello: () => string }>(tiptap, mounted.editor, Probe, { text: 'a' }, rect);
     await act(async () => {});
-    expect(document.body.querySelector('.acms-emoji-popup')).not.toBeNull();
+    expect(document.body.querySelector('.acms-admin-emoji-popup')).not.toBeNull();
     expect(document.body.textContent).toContain('a');
     expect(popup.getRef()?.hello()).toBe('hi');
 
@@ -31,7 +31,7 @@ describe('createPopup', () => {
     expect(document.body.textContent).toContain('b');
 
     popup.destroy();
-    expect(document.body.querySelector('.acms-emoji-popup')).toBeNull();
+    expect(document.body.querySelector('.acms-admin-emoji-popup')).toBeNull();
   });
 
   it('同時に 1 つだけ。新しく開くと前のものを閉じる（onClose も呼ぶ）', async () => {
@@ -40,7 +40,7 @@ describe('createPopup', () => {
     createPopup(tiptap, mounted.editor, Probe, { text: 'first' }, rect, { onClose });
     createPopup(tiptap, mounted.editor, Probe, { text: 'second' }, rect);
     await act(async () => {});
-    expect(document.body.querySelectorAll('.acms-emoji-popup')).toHaveLength(1);
+    expect(document.body.querySelectorAll('.acms-admin-emoji-popup')).toHaveLength(1);
     expect(onClose).toHaveBeenCalledTimes(1);
     expect(document.body.textContent).toContain('second');
   });
@@ -83,9 +83,9 @@ describe('createPopup', () => {
     createPopup(tiptap, mounted.editor, Probe, { text: 'x' }, rect);
     await act(async () => {});
     closeActivePopup(other.editor);
-    expect(document.body.querySelector('.acms-emoji-popup')).not.toBeNull();
+    expect(document.body.querySelector('.acms-admin-emoji-popup')).not.toBeNull();
     closeActivePopup(mounted.editor);
-    expect(document.body.querySelector('.acms-emoji-popup')).toBeNull();
+    expect(document.body.querySelector('.acms-admin-emoji-popup')).toBeNull();
     other.unmount();
   });
 

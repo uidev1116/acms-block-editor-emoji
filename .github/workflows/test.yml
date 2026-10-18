@@ -36,8 +36,8 @@ jobs:
         if: failure()
         run: docker compose logs acms
 
-  # Front end (TypeScript / Vite). src/assets is committed because the deploy only rsyncs src/,
-  # so the build must be reproducible: a rebuild must not change the committed files.
+  # Front end (TypeScript / Vite). The build output (src/assets) is not committed; it is built here
+  # only to prove the build works, and by the release workflow for the distributed package.
   frontend:
     runs-on: ubuntu-latest
     steps:
@@ -59,8 +59,8 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Committed build output is up to date
-        run: git diff --exit-code src/assets
+      - name: Build output exists
+        run: test -s src/assets/index.js && test -s src/assets/index.css && test -s src/assets/emojibase/ja/data.json
 
   # Run PHPUnit against every supported PHP (and a-blog cms) version.
   phpunit:

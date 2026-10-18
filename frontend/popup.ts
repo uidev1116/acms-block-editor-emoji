@@ -45,7 +45,7 @@ export function createPopup<P extends Record<string, unknown>, R = unknown>(
 
   const renderer = new tiptap.react.ReactRenderer(Component as ComponentType<P>, { editor, props });
   const element = renderer.element;
-  element.classList.add('acms-emoji-popup');
+  element.classList.add('acms-admin-emoji-popup');
   element.style.position = 'fixed';
   // 管理画面の固定ヘッダー・フッター（z-index 100004〜100015）より前、トースト（100040）より後ろに出す
   element.style.zIndex = '100020';
@@ -83,7 +83,7 @@ export function createPopup<P extends Record<string, unknown>, R = unknown>(
           size({
             padding: 8,
             apply({ availableHeight }) {
-              element.style.setProperty('--acms-emoji-max-height', `${Math.max(Math.floor(availableHeight), 160)}px`);
+              element.style.setProperty('--acms-admin-emoji-max-height', `${Math.max(Math.floor(availableHeight), 160)}px`);
             },
           }),
         ],

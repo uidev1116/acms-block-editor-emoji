@@ -15,11 +15,11 @@ a-blog cms のブロックエディターに、絵文字の**サジェスト**�
 
 ## インストール
 
-1. [Releases](https://github.com/uidev1116/acms-block-editor-emoji/releases) の zip（または `src/` を `BlockEditorEmoji` にしたもの）を `extension/plugins/BlockEditorEmoji/` に置く。
+1. [Releases](https://github.com/uidev1116/acms-block-editor-emoji/releases) の zip を展開して、`BlockEditorEmoji` を `extension/plugins/` に置く（zip にはビルド済みの JS / CSS / 絵文字データが入っている）。リポジトリを直接取得した場合は `src/assets/` が無いので、`npm ci && npm run build` が必要。
 2. 管理画面の「拡張アプリ」で `BlockEditorEmoji` をインストールして有効化する。
 3. ブロックエディターのあるエントリー編集画面を開いて確認する。
 
-JS / CSS / 絵文字データ（`assets/`）はビルド済みでリポジトリに含まれている。絵文字データは `assets/emojibase/` から自前で配信し、外部の CDN には接続しない。
+JS / CSS / 絵文字データ（`assets/`）はリリースの zip にだけ含まれる（リポジトリには無い）。絵文字データは `assets/emojibase/` から自前で配信し、外部の CDN には接続しない。
 
 ## 開発
 
@@ -30,7 +30,7 @@ npm ci
 npm run typecheck   # 型チェック
 npm test            # vitest
 npm run coverage    # vitest + カバレッジ
-npm run build       # src/assets/ に書き出す（コミットする）。CI は再ビルドして差分が無いことを確認する
+npm run build       # src/assets/ に書き出す（Git には含めない。リリース時に CI がビルドして配布用の zip にだけ含める）
 npm run dev         # 変更を監視してビルド
 ```
 

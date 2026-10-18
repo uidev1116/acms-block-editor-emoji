@@ -51,22 +51,22 @@ export const SuggestionList = forwardRef<SuggestionListHandle, Props>(function S
   const active = Math.min(selected, items.length - 1);
 
   return (
-    <ul className="acms-emoji-list" role="listbox">
+    <ul className="acms-admin-emoji-list" role="listbox">
       {items.map((item, index) => (
         <li
           key={item.emoji}
           role="option"
           aria-selected={index === active}
-          className="acms-emoji-list__item"
+          className="acms-admin-emoji-list__item"
           onMouseDown={(e) => e.preventDefault()}
           onMouseEnter={() => setSelected(index)}
           onClick={() => command({ emoji: item.emoji })}
         >
-          <span className="acms-emoji-list__emoji" aria-hidden="true">
+          <span className="acms-admin-emoji-list__emoji" aria-hidden="true">
             {item.emoji}
           </span>
-          <span className="acms-emoji-list__label">{item.label}</span>
-          {item.shortcodes[0] && <span className="acms-emoji-list__code">:{item.shortcodes[0]}:</span>}
+          <span className="acms-admin-emoji-list__label">{item.label}</span>
+          {item.shortcodes[0] && <span className="acms-admin-emoji-list__code">:{item.shortcodes[0]}:</span>}
         </li>
       ))}
     </ul>

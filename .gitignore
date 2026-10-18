@@ -3,6 +3,10 @@
 
 # Node
 node_modules/
+
+# Build output (vite build + scripts/copy-emojibase.mjs). Not committed: the release workflow builds it
+# and ships it only inside the release package. `npm run setup` builds it for local use.
+/src/assets/
 /coverage/
 # composer.lock is committed: plugins built from this block_editor_emoji are applications, so a locked,
 # reproducible dependency set is desirable (Composer's recommendation for project-type packages).

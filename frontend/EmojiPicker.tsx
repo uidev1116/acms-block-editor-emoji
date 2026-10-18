@@ -34,12 +34,12 @@ function RecentRow({ onSelect }: { onSelect: (emoji: string) => void }) {
   const recent = getRecent();
   if (recent.length === 0) return null;
   return (
-    <div className="acms-emoji-picker__recent" role="group" aria-label={t('block-editor-emoji:recent')}>
+    <div className="acms-admin-emoji-picker__recent" role="group" aria-label={t('block-editor-emoji:recent')}>
       {recent.map((emoji) => (
         <button
           key={emoji}
           type="button"
-          className="acms-emoji-picker__recent-item"
+          className="acms-admin-emoji-picker__recent-item"
           onClick={() => onSelect(emoji)}
         >
           {emoji}
@@ -80,7 +80,7 @@ export function EmojiPicker({ emojibaseUrl, onSelect, onClose }: EmojiPickerProp
   if (failed) {
     return (
       <div
-        className="acms-emoji-picker acms-emoji-picker--error"
+        className="acms-admin-emoji-picker acms-admin-emoji-picker--error"
         role="alert"
         onKeyDown={(e) => closeOnEscape(e, onClose)}
       >
@@ -103,7 +103,7 @@ export function EmojiPicker({ emojibaseUrl, onSelect, onClose }: EmojiPickerProp
     <P.Root
       key={attempt}
       ref={rootRef}
-      className="acms-emoji-picker"
+      className="acms-admin-emoji-picker"
       locale="ja"
       emojibaseUrl={emojibaseUrl}
       resolveEmojiData={resolver}
@@ -112,18 +112,18 @@ export function EmojiPicker({ emojibaseUrl, onSelect, onClose }: EmojiPickerProp
       onKeyDown={(e) => closeOnEscape(e, onClose)}
     >
       <P.Search
-        className="acms-emoji-picker__search"
+        className="acms-admin-emoji-picker__search"
         placeholder={t('block-editor-emoji:search')}
         autoFocus
         onChange={(e) => setQuery(e.target.value)}
       />
       {query === '' && <RecentRow onSelect={onSelect} />}
-      <P.Viewport className="acms-emoji-picker__viewport">
-        <P.Loading className="acms-emoji-picker__status">{t('block-editor-emoji:loading')}</P.Loading>
-        <P.Empty className="acms-emoji-picker__status">{t('block-editor-emoji:empty')}</P.Empty>
-        <P.List className="acms-emoji-picker__list" />
+      <P.Viewport className="acms-admin-emoji-picker__viewport">
+        <P.Loading className="acms-admin-emoji-picker__status">{t('block-editor-emoji:loading')}</P.Loading>
+        <P.Empty className="acms-admin-emoji-picker__status">{t('block-editor-emoji:empty')}</P.Empty>
+        <P.List className="acms-admin-emoji-picker__list" />
       </P.Viewport>
-      <P.SkinToneSelector className="acms-emoji-picker__skin" />
+      <P.SkinToneSelector className="acms-admin-emoji-picker__skin" />
     </P.Root>
   );
 }

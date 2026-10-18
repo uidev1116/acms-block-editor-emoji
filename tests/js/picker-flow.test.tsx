@@ -9,7 +9,7 @@ import { tiptap } from './helpers/tiptap';
 // ピッカー本体（frimousse）は別テスト。ここでは「開く前の位置に入る」流れだけを確かめる
 vi.mock('../../frontend/EmojiPicker', () => ({
   EmojiPicker: ({ onSelect, onClose }: { onSelect: (e: string) => void; onClose: () => void }) => (
-    <div className="acms-emoji-picker">
+    <div className="acms-admin-emoji-picker">
       <button onClick={() => onSelect('😄')}>pick</button>
       <button onClick={onClose}>close</button>
     </div>
@@ -42,7 +42,7 @@ describe('ピッカーを開く流れ', () => {
     });
     expect(editor.getHTML()).toBe('<p>ab😄cd</p>');
     expect(getRecent()).toEqual(['😄']);
-    expect(document.querySelector('.acms-emoji-popup')).toBeNull();
+    expect(document.querySelector('.acms-admin-emoji-popup')).toBeNull();
   });
 
   it('閉じるとエディターにフォーカスを戻し、何も挿入しない', async () => {
@@ -52,7 +52,7 @@ describe('ピッカーを開く流れ', () => {
       fireEvent.click(await screen.findByText('close'));
     });
     expect(editor.getHTML()).toBe('<p>abcd</p>');
-    expect(document.querySelector('.acms-emoji-popup')).toBeNull();
+    expect(document.querySelector('.acms-admin-emoji-popup')).toBeNull();
     expect(focus).toHaveBeenCalled();
   });
 
