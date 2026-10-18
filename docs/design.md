@@ -719,7 +719,8 @@ export function searchEmoji(data: EmojiEntry[], query: string, limit: number): E
 21. **設定画面（オン／オフ）**を追加した。拡張アプリの一覧の「設定」から開く Twig 製のページ（`src/template/admin/main.twig`）で、ブログごとに `block_editor_emoji_enabled`（`on` が既定、`off`）を標準の `ACMS_POST_Config` で保存する。`off` のとき `Hook::afterBuild()` が JS / CSS を登録しない。DB の接続文字コードが `utf8mb4` でないときは、画面に警告を出す。
 22. **最低バージョンは a-blog cms 3.2.36**（動作条件）。`@ablogcms/plugins` / `block-editor` の各リリースを調べ、依存している機能（`ctx.keyboardShortcuts.registerShortcut`、`ctx.i18n.addResources`、ブロックエディターの `blockMenu` 拡張点）が揃う最初のバージョンが 3.2.36 だった（3.2.35 以前は `registerShortcut`・`addResources`・`BlockMenuButtonItem` が無い）。`Services/Requirements`（`ServiceProvider::checkRequirements()`）が、インストール時に `VERSION` が 3.2.36 以上であることを確認する。型は 3.2.37 に固定してビルドする。
 23. **`react-dom` の代用品**：ホストは `react-dom` を公開していない。`@ablogcms/components` の Popover（`@floating-ui/react`）と、`@ablogcms/react-hooks` 経由で巻き込まれる `@ablogcms/react-utils`（`react-dom/client` を import している）のために、vite の alias（`vite.config.ts`、vitest も同じ設定）で `frontend/shims/react-dom.ts` に差し替える。`createPortal`（React のポータル要素を作るだけ。描画はホストの React DOM）と `flushSync`（即時実行）を持ち、`createRoot` / `hydrateRoot` は呼ぶと例外を投げる。`react-dom` 本体（約 130KB）を同梱して React DOM を二重にするより小さく安全。バンドルは約 91KB になった（目安を 100KB 未満に変更）。
-24. **CI**：`frontend` ジョブで `npm run coverage`（vitest のカバレッジ）も実行する。
+24. **PHP の対応バージョンは 8.1〜8.5**。CI の phpunit はこの範囲（`php: ['8.1' … '8.5']`）で回し、phpcs（PHPCompatibility）と PHPStan も 8.1〜8.5 を対象にしている。8.6 以降は未検証で、README にもその旨を書いた。
+25. **CI**：`frontend` ジョブで `npm run coverage`（vitest のカバレッジ）も実行する。
 
 ### テストとカバレッジ
 
