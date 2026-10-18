@@ -36,7 +36,7 @@ define('DB_CONNECTION_CHARSET', 'utf8mb4');
 
 ## ダウンロード
 
-[BlockEditorEmoji](https://github.com/uidev1116/acms-block-editor-emoji/releases/latest)
+[BlockEditorEmoji](https://github.com/uidev1116/acms-block-editor-emoji/releases/latest/download/BlockEditorEmoji.zip)
 
 ## インストール方法
 
