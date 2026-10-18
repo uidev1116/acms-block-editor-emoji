@@ -110,7 +110,7 @@ define('DB_CONNECTION_CHARSET', 'utf8mb4');
 
 ## 開発者向け情報
 
-必要なもの: Node 22（`package.json` の `volta.node` が唯一の指定です。Volta なら自動で切り替わり、CI もここを読みます。変えるときは `volta pin node@<版>`）、Docker（PHP のテスト用）
+必要なもの: Node 24（`package.json` の `volta.node` が唯一の指定です。Volta なら自動で切り替わり、CI もここを読みます。変えるときは `volta pin node@<版>`）、Docker（PHP のテスト用）
 
 ```bash
 npm ci
