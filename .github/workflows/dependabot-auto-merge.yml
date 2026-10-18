@@ -23,8 +23,12 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
+      # Only GitHub Actions and npm dev dependencies are auto-merged. npm runtime dependencies are bundled
+      # into the distributed JS, so they (and anything unrecognised) are left for manual review
       - name: Enable auto-merge for patch/minor updates
-        if: steps.metadata.outputs.update-type == 'version-update:semver-patch' || steps.metadata.outputs.update-type == 'version-update:semver-minor'
+        if: >-
+          (steps.metadata.outputs.update-type == 'version-update:semver-patch' || steps.metadata.outputs.update-type == 'version-update:semver-minor') &&
+          (steps.metadata.outputs.package-ecosystem == 'github_actions' || steps.metadata.outputs.dependency-type == 'direct:development')
         run: gh pr merge --auto --squash "$PR_URL"
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}

@@ -26,6 +26,10 @@ class Hook
         if (!$registrar->shouldRegister($this->currentAdmin()) || !$this->isEnabled()) {
             return;
         }
+        if (!$this->assetsBuilt()) {
+            // Not built: the settings screen still works, but there is nothing to load
+            return;
+        }
         /** @var AssetManager $assets */
         $assets = Asset::getInstance();
         $registrar->register($assets);
@@ -53,6 +57,17 @@ class Hook
         $bid = defined('BID') ? BID : 1;
 
         return Settings::isEnabled(Config::load($bid)->get(Settings::KEY, 'on'));
+    }
+
+    /**
+     * Whether src/assets/index.js exists. Overridable for tests, because the build output is not
+     * committed.
+     *
+     * @return bool
+     */
+    protected function assetsBuilt()
+    {
+        return AssetRegistrar::isBuilt();
     }
 
     /**

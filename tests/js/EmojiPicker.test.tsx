@@ -157,7 +157,7 @@ describe('EmojiPicker', () => {
     // 読み込み前は 🙂 のプレースホルダーが並ぶので、実データの絵文字が出るまで待つ
     const cell = await waitFor(() => {
       const el = [...document.querySelectorAll<HTMLElement>('[frimousse-emoji]')].find((e) => e.textContent === '😄');
-      expect(el).toBeDefined();
+      expect(el).not.toBeUndefined();
       return el as HTMLElement;
     });
     fireEvent.click(cell);
@@ -187,5 +187,22 @@ describe('EmojiPicker', () => {
     // 変換中でない Enter は、これまでどおり選択する
     fireEvent.keyDown(search, { key: 'Enter' });
     expect(onSelect).toHaveBeenCalledWith('😄');
+  });
+
+  it('フォーカスがピッカーの外へ移ったら onDismiss を呼ぶ。中での移動では呼ばない', async () => {
+    stubFetch();
+    const onDismiss = vi.fn();
+    render(
+      <div>
+        <button type="button">外</button>
+        <EmojiPicker emojibaseUrl="/emojibase" onSelect={vi.fn()} onClose={vi.fn()} onDismiss={onDismiss} />
+      </div>,
+    );
+    const search = document.querySelector('input') as HTMLInputElement;
+    const outside = screen.getByText('外');
+    fireEvent.blur(search, { relatedTarget: search.closest('.acms-admin-emoji-picker') });
+    expect(onDismiss).not.toHaveBeenCalled();
+    fireEvent.blur(search, { relatedTarget: outside });
+    expect(onDismiss).toHaveBeenCalledTimes(1);
   });
 });

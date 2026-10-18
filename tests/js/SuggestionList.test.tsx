@@ -124,4 +124,33 @@ describe('SuggestionList', () => {
     rerender(<SuggestionList ref={ref} items={[items[2], items[0]]} command={command} />);
     expect(screen.getAllByRole('option')[0].getAttribute('aria-selected')).toBe('true');
   });
+
+  it('各項目に id があり、listbox に名前がある', () => {
+    setup();
+    const options = screen.getAllByRole('option');
+    const ids = options.map((o) => o.id);
+    expect(ids.every((id) => id !== '')).toBe(true);
+    expect(new Set(ids).size).toBe(3);
+    expect(screen.getByRole('listbox').getAttribute('aria-label')).toBe('絵文字の候補');
+  });
+
+  it('選択が変わるたびに onActive へ listbox と選択項目の id を伝え、消えるときは null を伝える', () => {
+    const onActive = vi.fn();
+    const ref = createRef<SuggestionListHandle>();
+    const view = render(<SuggestionList ref={ref} items={items} command={vi.fn()} onActive={onActive} />);
+    const options = screen.getAllByRole('option');
+    const listId = screen.getByRole('listbox').id;
+    expect(onActive).toHaveBeenLastCalledWith({ listId, optionId: options[0].id });
+    act(() => {
+      ref.current!.onKeyDown({ event: key('ArrowDown') });
+    });
+    expect(onActive).toHaveBeenLastCalledWith({ listId, optionId: options[1].id });
+    view.unmount();
+    expect(onActive).toHaveBeenLastCalledWith(null);
+  });
+
+  it('候補の件数を、読み上げ用の status で通知する', () => {
+    setup();
+    expect(screen.getByRole('status').textContent).toBe('3 件の候補');
+  });
 });

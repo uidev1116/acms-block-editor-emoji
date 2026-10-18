@@ -11,6 +11,9 @@ export const resources = {
     retry: '再試行',
     recent: '最近使った絵文字',
     shortcutOpenPicker: '絵文字ピッカーを開く',
+    suggestions: '絵文字の候補',
+    suggestionCount: '{{count}} 件の候補',
+    picker: '絵文字ピッカー',
   },
   en: {
     openPicker: 'Emoji ({{shortcut}})',
@@ -21,6 +24,9 @@ export const resources = {
     retry: 'Retry',
     recent: 'Recently used',
     shortcutOpenPicker: 'Open the emoji picker',
+    suggestions: 'Emoji suggestions',
+    suggestionCount: '{{count}} suggestions',
+    picker: 'Emoji picker',
   },
 } as const;
 

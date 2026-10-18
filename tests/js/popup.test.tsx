@@ -111,4 +111,15 @@ describe('createPopup（管理画面の Popover で包む）', () => {
     popup.destroy();
     expect(() => popup.destroy()).not.toThrow();
   });
+
+  it('ピッカーのダイアログには名前が付き、候補リスト用には dialog の名前を付けない', async () => {
+    mounted = mountEditor([]);
+    createPopup(tiptap, mounted.editor, Probe, { text: 'x' }, rect, { variant: 'picker' });
+    await flush();
+    expect(popups()[0].getAttribute('aria-label')).toBe('絵文字ピッカー');
+    closeActivePopup();
+    createPopup(tiptap, mounted.editor, Probe, { text: 'x' }, rect);
+    await flush();
+    expect(popups()[0].getAttribute('role')).not.toBe('dialog');
+  });
 });

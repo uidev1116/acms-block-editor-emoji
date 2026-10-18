@@ -1,4 +1,5 @@
-import { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
+import { t } from '@ablogcms/i18n';
+import { forwardRef, useEffect, useId, useImperativeHandle, useState } from 'react';
 import type { EmojiEntry } from './emoji-data';
 
 export interface SuggestionListHandle {
@@ -6,9 +7,16 @@ export interface SuggestionListHandle {
   onKeyDown(props: { event: KeyboardEvent }): boolean;
 }
 
+export interface ActiveOption {
+  listId: string;
+  optionId: string;
+}
+
 interface Props {
   items: EmojiEntry[];
   command: (props: { emoji: string }) => void;
+  /** 選択中の項目が変わったとき（消えるときは null）。エディター側の aria-activedescendant に使う */
+  onActive?: (active: ActiveOption | null) => void;
 }
 
 /** IME の変換中（確定の Enter など）はキー操作を奪わない */
@@ -17,12 +25,19 @@ function isComposingEvent(event: KeyboardEvent): boolean {
 }
 
 export const SuggestionList = forwardRef<SuggestionListHandle, Props>(function SuggestionList(
-  { items, command },
+  { items, command, onActive },
   ref,
 ) {
   const [selected, setSelected] = useState(0);
-
-  useEffect(() => setSelected(0), [items]);
+  // 候補が入れ替わったら、描画の前に先頭へ戻す（古い選択位置の id を一瞬でも出さない）
+  const [shownItems, setShownItems] = useState(items);
+  if (shownItems !== items) {
+    setShownItems(items);
+    setSelected(0);
+  }
+  const listId = useId();
+  const optionId = (index: number) => `${listId}-option-${index}`;
+  const activeIndex = items.length === 0 ? -1 : Math.min(selected, items.length - 1);
 
   useImperativeHandle(ref, () => ({
     onKeyDown({ event }) {
@@ -47,14 +62,22 @@ export const SuggestionList = forwardRef<SuggestionListHandle, Props>(function S
     },
   }));
 
+  useEffect(() => {
+    if (activeIndex < 0) return;
+    onActive?.({ listId, optionId: `${listId}-option-${activeIndex}` });
+  }, [onActive, listId, activeIndex, items]);
+  useEffect(() => () => onActive?.(null), [onActive]);
+
   if (items.length === 0) return null;
-  const active = Math.min(selected, items.length - 1);
+  const active = activeIndex;
 
   return (
-    <ul className="acms-admin-emoji-list" role="listbox">
+    <>
+    <ul id={listId} className="acms-admin-emoji-list" role="listbox" aria-label={t('block-editor-emoji:suggestions')}>
       {items.map((item, index) => (
         <li
           key={item.emoji}
+          id={optionId(index)}
           role="option"
           aria-selected={index === active}
           className="acms-admin-emoji-list__item"
@@ -70,5 +93,9 @@ export const SuggestionList = forwardRef<SuggestionListHandle, Props>(function S
         </li>
       ))}
     </ul>
+    <span role="status" className="acms-admin-emoji-visually-hidden">
+      {t('block-editor-emoji:suggestionCount', { count: items.length })}
+    </span>
+    </>
   );
 });

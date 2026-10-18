@@ -54,7 +54,7 @@
 }
 
 .acms-admin-emoji-list__code {
-  color: #6b7280;
+  color: #4b5563;
   font-size: 12px;
 }
 
@@ -143,7 +143,7 @@
   /* 見出しの文字は、絵文字の字形の左端（ボタンの左端 + 6px）にそろえる */
   padding: 8px calc(var(--emoji-pad-x) + 6px) 4px;
   background: var(--acms-admin-popover-bg, #fff);
-  color: #6b7280;
+  color: #4b5563;
   font-size: 12px;
   font-weight: 600;
 }
@@ -161,7 +161,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #6b7280;
+  color: #4b5563;
 }
 
 .acms-admin-emoji-picker__skin {
@@ -173,4 +173,21 @@
   background: transparent;
   font-size: 16px;
   cursor: pointer;
+}
+
+/* スクリーンリーダー向けの通知（画面には出さない） */
+.acms-admin-emoji-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* 強制カラー（ハイコントラスト）では背景が消えるので、選択を枠で示す */
+@media (forced-colors: active) {
+  .acms-admin-emoji-list__item[aria-selected='true'] {
+    outline: 2px solid Highlight;
+  }
 }

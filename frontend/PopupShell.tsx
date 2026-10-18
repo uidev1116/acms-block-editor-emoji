@@ -1,4 +1,5 @@
 import { Popover, PopoverContent } from '@ablogcms/components/popover';
+import { t } from '@ablogcms/i18n';
 import { flip, offset, shift, size } from '@floating-ui/react';
 import { forwardRef, type ComponentType } from 'react';
 
@@ -26,6 +27,8 @@ export const PopupShell = forwardRef<unknown, Props>(function PopupShell(
   return (
     <Popover
       isOpen
+      // 候補リストは名前のない dialog にしない（listbox は中身が持つ）。ピッカーは dialog のまま
+      roleOptions={variant === 'list' ? { role: 'label' } : undefined}
       placement="bottom-start"
       getAnchorRect={getRect}
       onOpenChange={(open) => {
@@ -54,7 +57,11 @@ export const PopupShell = forwardRef<unknown, Props>(function PopupShell(
         ],
       }}
     >
-      <PopoverContent size="small" className={`acms-admin-emoji-popup acms-admin-emoji-popup--${variant}`}>
+      <PopoverContent
+        size="small"
+        className={`acms-admin-emoji-popup acms-admin-emoji-popup--${variant}`}
+        {...(variant === 'picker' ? { 'aria-label': t('block-editor-emoji:picker') } : {})}
+      >
         <Content ref={ref} {...contentProps} />
       </PopoverContent>
     </Popover>

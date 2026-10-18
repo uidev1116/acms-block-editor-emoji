@@ -32,6 +32,15 @@ class AssetRegistrar
     }
 
     /**
+     * Whether the build output exists. `src/assets/` is not committed, so a checkout that was not
+     * built (or deployed without the release package) would otherwise load a script that 404s.
+     */
+    public static function isBuilt(?string $assetsDir = null): bool
+    {
+        return is_file(($assetsDir ?? dirname(__DIR__) . '/assets') . '/index.js');
+    }
+
+    /**
      * Only admin screens (including the entry edit screen) have the block editor and ACMS.plugins.
      */
     public function shouldRegister(mixed $admin): bool

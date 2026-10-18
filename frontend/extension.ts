@@ -3,7 +3,7 @@ import type { Tiptap } from '@ablogcms/block-editor/tiptap';
 import type { BlockMenuToolbarItem } from '@ablogcms/block-editor/types';
 import type { Editor, Range } from '@tiptap/core';
 import { EmojiPicker } from './EmojiPicker';
-import { SuggestionList, type SuggestionListHandle } from './SuggestionList';
+import { SuggestionList, type ActiveOption, type SuggestionListHandle } from './SuggestionList';
 import { loadEmojiData, searchEmoji, type EmojiEntry } from './emoji-data';
 import { isAllowedPosition } from './position';
 import { createPopup, closeActivePopup, type PopupHandle } from './popup';
@@ -37,6 +37,39 @@ export function shortcutLabel(): string {
 }
 const TRIGGERS = [':', '：'] as const;
 
+/** 文字列を HTML として解釈させず、テキストとして挿入する */
+const asText = (emoji: string) => ({ type: 'text', text: emoji });
+
+/** 候補を出す前のエディターの role（textbox）。閉じたら戻す */
+const originalRoles = new WeakMap<Element, string | null>();
+
+/**
+ * 候補リストをエディターに結び付ける。フォーカスはエディターに残るので、開いている間だけ combobox にして
+ * aria-activedescendant で選択中の候補を伝える（aria-expanded は textbox には使えない）。
+ * 破棄済みのエディターは view にアクセスできない（Tiptap が例外を投げる）ので何もしない。
+ */
+function setComboboxState(editor: Editor, active: ActiveOption | null): void {
+  if (editor.isDestroyed) return;
+  const dom = editor.view.dom;
+  if (active) {
+    if (!originalRoles.has(dom)) originalRoles.set(dom, dom.getAttribute('role'));
+    dom.setAttribute('role', 'combobox');
+    dom.setAttribute('aria-autocomplete', 'list');
+    dom.setAttribute('aria-expanded', 'true');
+    dom.setAttribute('aria-controls', active.listId);
+    dom.setAttribute('aria-activedescendant', active.optionId);
+    return;
+  }
+  const original = originalRoles.get(dom);
+  if (original === undefined) return;
+  originalRoles.delete(dom);
+  if (original === null) dom.removeAttribute('role');
+  else dom.setAttribute('role', original);
+  for (const name of ['aria-autocomplete', 'aria-expanded', 'aria-controls', 'aria-activedescendant']) {
+    dom.removeAttribute(name);
+  }
+}
+
 /** コードブロック内では絵文字を入れない */
 function canInsertHere(editor: Editor): boolean {
   return !editor.isActive('codeBlock');
@@ -56,7 +89,7 @@ export function openPicker(tiptap: Tiptap, editor: Editor, deps: Deps): void {
     {
       emojibaseUrl: deps.emojibaseUrl,
       onSelect: (emoji: string) => {
-        editor.chain().focus().insertContentAt(range, emoji).run();
+        editor.chain().focus().insertContentAt(range, asText(emoji)).run();
         pushRecent(emoji);
         popup.destroy();
       },
@@ -64,6 +97,8 @@ export function openPicker(tiptap: Tiptap, editor: Editor, deps: Deps): void {
         popup.destroy();
         editor.commands.focus();
       },
+      // Tab などでフォーカスが外へ出たとき。フォーカスは奪い返さない
+      onDismiss: () => popup.destroy(),
     },
     rect,
     { variant: 'picker', onOutsideClick: () => popup.destroy() },
@@ -81,7 +116,10 @@ interface SuggestionRenderProps {
 
 /** Suggestion の render()。候補が 0 件のときはリストを閉じる */
 export function createSuggestionRender(tiptap: Tiptap) {
-  let popup: PopupHandle<{ items: EmojiEntry[]; command: SuggestionRenderProps['command'] }, SuggestionListHandle> | null =
+  let popup: PopupHandle<
+    { items: EmojiEntry[]; command: SuggestionRenderProps['command']; onActive: (active: ActiveOption | null) => void },
+    SuggestionListHandle
+  > | null =
     null;
   let current: SuggestionRenderProps | null = null;
 
@@ -89,6 +127,7 @@ export function createSuggestionRender(tiptap: Tiptap) {
     popup?.destroy();
     popup = null;
   };
+  const onActive = (active: ActiveOption | null) => current && setComboboxState(current.editor, active);
 
   const show = (props: SuggestionRenderProps) => {
     current = props;
@@ -99,14 +138,14 @@ export function createSuggestionRender(tiptap: Tiptap) {
       return;
     }
     if (popup) {
-      popup.update({ items: props.items, command: props.command });
+      popup.update({ items: props.items, command: props.command, onActive });
       return;
     }
     popup = createPopup(
       tiptap,
       props.editor,
       SuggestionList,
-      { items: props.items, command: props.command },
+      { items: props.items, command: props.command, onActive },
       () => current?.clientRect?.() ?? null,
       // 他のポップアップ（ピッカー）に置き換えられたら、参照を捨てる
       { onClose: () => (popup = null) },
@@ -155,7 +194,7 @@ export function createEmojiExtension(tiptap: Tiptap, deps: Deps) {
         insertEmoji:
           (emoji: string) =>
           ({ chain }) =>
-            canInsertHere(this.editor) && chain().focus().insertContent(emoji).run(),
+            canInsertHere(this.editor) && chain().focus().insertContent(asText(emoji)).run(),
         openEmojiPicker:
           () =>
           ({ editor }) => {
@@ -194,7 +233,7 @@ export function createEmojiExtension(tiptap: Tiptap, deps: Deps) {
             }
           },
           command: ({ editor, range, props }: { editor: Editor; range: Range; props: { emoji: string } }) => {
-            editor.chain().focus().insertContentAt(range, props.emoji).run();
+            editor.chain().focus().insertContentAt(range, asText(props.emoji)).run();
             pushRecent(props.emoji);
           },
           render: () => createSuggestionRender(tiptap),

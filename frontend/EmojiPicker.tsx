@@ -10,6 +10,8 @@ export interface EmojiPickerProps {
   emojibaseUrl: string;
   onSelect: (emoji: string) => void;
   onClose: () => void;
+  /** フォーカスがピッカーの外へ移ったとき（Esc ではない閉じ方。フォーカスは戻さない） */
+  onDismiss?: () => void;
 }
 
 const failureListeners = new Set<() => void>();
@@ -64,7 +66,7 @@ function isComposingKey(e: KeyboardEvent<HTMLElement>): boolean {
   return e.nativeEvent.isComposing || e.nativeEvent.keyCode === 229;
 }
 
-export function EmojiPicker({ emojibaseUrl, onSelect, onClose }: EmojiPickerProps) {
+export function EmojiPicker({ emojibaseUrl, onSelect, onClose, onDismiss }: EmojiPickerProps) {
   const [attempt, setAttempt] = useState(0);
   const [failed, setFailed] = useState(false);
   const [query, setQuery] = useState('');
@@ -122,6 +124,11 @@ export function EmojiPicker({ emojibaseUrl, onSelect, onClose }: EmojiPickerProp
         if (isComposingKey(e)) e.stopPropagation();
       }}
       onKeyDown={(e) => closeOnEscape(e, onClose)}
+      onBlur={(e) => {
+        const next = e.relatedTarget as Node | null;
+        const scope = e.currentTarget.closest('.acms-admin-emoji-popup') ?? e.currentTarget;
+        if (next && !scope.contains(next)) onDismiss?.();
+      }}
     >
       <P.Search
         id={searchId}

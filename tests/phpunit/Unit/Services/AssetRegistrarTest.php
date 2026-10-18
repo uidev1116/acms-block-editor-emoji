@@ -76,4 +76,27 @@ final class AssetRegistrarTest extends TestCase
 
         AssetRegistrar::forDirOffset('blog/')->register($manager);
     }
+
+    #[Test]
+    #[TestDox('isBuilt() is true only when index.js exists in the assets directory')]
+    public function isBuiltChecksTheBuildOutput(): void
+    {
+        $dir = sys_get_temp_dir() . '/block-editor-emoji-' . bin2hex(random_bytes(4));
+        mkdir($dir);
+        try {
+            $this->assertFalse(AssetRegistrar::isBuilt($dir));
+            file_put_contents($dir . '/index.js', '//');
+            $this->assertTrue(AssetRegistrar::isBuilt($dir));
+        } finally {
+            @unlink($dir . '/index.js');
+            @rmdir($dir);
+        }
+    }
+
+    #[Test]
+    #[TestDox('isBuilt() defaults to the plugin\'s own src/assets directory')]
+    public function isBuiltDefaultsToThePluginAssets(): void
+    {
+        $this->assertSame(is_file(dirname(__DIR__, 4) . '/src/assets/index.js'), AssetRegistrar::isBuilt());
+    }
 }

@@ -31,15 +31,21 @@ final class HookTest extends TestCase
         return $callable();
     }
 
-    private function hook(mixed $admin, string $dirOffset = '', bool $enabled = true, string $charset = 'utf8mb4'): Hook
+    private function hook(mixed $admin, string $dirOffset = '', bool $enabled = true, string $charset = 'utf8mb4', bool $built = true): Hook
     {
-        return new class ($admin, $dirOffset, $enabled, $charset) extends Hook {
+        return new class ($admin, $dirOffset, $enabled, $charset, $built) extends Hook {
             public function __construct(
                 private mixed $admin,
                 private string $offset,
                 private bool $enabledSetting,
-                private string $charset
+                private string $charset,
+                private bool $built
             ) {
+            }
+
+            protected function assetsBuilt()
+            {
+                return $this->built;
             }
 
             protected function isEnabled()
@@ -132,6 +138,33 @@ final class HookTest extends TestCase
 
         $res = '<html></html>';
         $this->hook('entry_editor', '', false)->afterBuild($res);
+    }
+
+    #[Test]
+    #[TestDox('afterBuild() does nothing when the JS has not been built (no 404 script tag)')]
+    public function doesNothingWhenAssetsAreNotBuilt(): void
+    {
+        $manager = $this->createMock(AssetManager::class);
+        $manager->expects($this->never())->method('script');
+        $manager->expects($this->never())->method('style');
+        Asset::swap($manager);
+
+        $res = '<html></html>';
+        $this->hook('entry_editor', '', true, 'utf8mb4', false)->afterBuild($res);
+    }
+
+    #[Test]
+    #[TestDox('the real Hook asks the registrar whether the build output exists')]
+    public function realHookChecksTheBuildOutput(): void
+    {
+        $hook = new class extends Hook {
+            public function built(): bool
+            {
+                return $this->assetsBuilt();
+            }
+        };
+
+        $this->assertSame(is_file(dirname(__DIR__, 3) . '/src/assets/index.js'), $hook->built());
     }
 
     #[Test]

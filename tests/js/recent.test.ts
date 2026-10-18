@@ -50,4 +50,15 @@ describe('recent', () => {
     expect(getRecent()).toEqual([]);
     expect(() => pushRecent('😄')).not.toThrow();
   });
+
+  it('絵文字として不自然な値（HTML・長すぎる文字列）は読み飛ばす', () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(['<img src=x onerror=alert(1)>', 'a'.repeat(40), '😄']));
+    expect(getRecent()).toEqual(['😄']);
+  });
+
+  it('絵文字として不自然な値は保存しない', () => {
+    pushRecent('<img src=x>');
+    pushRecent('');
+    expect(getRecent()).toEqual([]);
+  });
 });

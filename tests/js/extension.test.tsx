@@ -1,4 +1,4 @@
-import { act } from '@testing-library/react';
+import { act, fireEvent } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createEmojiExtension, createSuggestionRender, shortcutLabel } from '../../frontend/extension';
 import { resetEmojiDataCache } from '../../frontend/emoji-data';
@@ -222,6 +222,22 @@ describe('コマンドとショートカット', () => {
     expect(document.querySelector('.acms-admin-emoji-picker')).toBeNull();
   });
 
+  it('フォーカスがピッカーの外へ出たらピッカーを閉じる', async () => {
+    const messages = { groups: [{ key: 'smileys-emotion', message: 'スマイリー', order: 0 }], subgroups: [], skinTones: [] };
+    vi.stubGlobal('fetch', vi.fn(async (u: string) => ok(u.endsWith('messages.json') ? messages : raw)));
+    const editor = mount();
+    press(editor, 'e', { key: 'e', ctrlKey: true, altKey: true });
+    await flush();
+    const outside = document.createElement('button');
+    document.body.appendChild(outside);
+    const search = document.querySelector('.acms-admin-emoji-picker input') as HTMLInputElement;
+    await act(async () => {
+      fireEvent.blur(search, { relatedTarget: outside });
+    });
+    expect(document.querySelector('.acms-admin-emoji-picker')).toBeNull();
+    outside.remove();
+  });
+
   it('ピッカーを開くとサジェストは閉じる', async () => {
     const editor = mount();
     await type(editor, ':smile');
@@ -288,5 +304,49 @@ describe('候補の更新', () => {
     const other = mountEditor([createEmojiExtension(tiptap, { emojibaseUrl: '/emojibase' })]);
     other.unmount();
     expect(document.querySelector('.acms-admin-emoji-popup')).not.toBeNull();
+  });
+
+  it('候補が出ている間、エディターに aria-activedescendant / aria-controls / aria-expanded が付き、閉じると外れる', async () => {
+    const editor = mount();
+    await type(editor, ':smile');
+    const dom = editor.view.dom;
+    const option = document.querySelector('[role="option"]') as HTMLElement;
+    expect(dom.getAttribute('role')).toBe('combobox');
+    expect(dom.getAttribute('aria-autocomplete')).toBe('list');
+    expect(dom.getAttribute('aria-controls')).toBe(document.querySelector('[role="listbox"]')!.id);
+    expect(dom.getAttribute('aria-activedescendant')).toBe(option.id);
+    await act(async () => {
+      editor.view.dom.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    });
+    await flush();
+    expect(dom.hasAttribute('aria-activedescendant')).toBe(false);
+    expect(dom.hasAttribute('aria-controls')).toBe(false);
+    expect(dom.getAttribute('role')).toBe('textbox');
+    expect(dom.hasAttribute('aria-autocomplete')).toBe(false);
+  });
+
+  it('元の role が無いエディターは、閉じたとき role 属性ごと外す', async () => {
+    const editor = mount();
+    editor.view.dom.removeAttribute('role');
+    await type(editor, ':smile');
+    expect(editor.view.dom.getAttribute('role')).toBe('combobox');
+    await act(async () => {
+      editor.view.dom.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    });
+    await flush();
+    expect(editor.view.dom.hasAttribute('role')).toBe(false);
+  });
+
+  it('候補を出したままエディターを破棄しても、アンマウント時に例外にならない', async () => {
+    const editor = mount();
+    await type(editor, ':smile');
+    editor.destroy();
+    expect(() => mounted.unmount()).not.toThrow();
+  });
+
+  it('候補の文字列は HTML として解釈せず、テキストとして挿入する', () => {
+    const editor = mount();
+    editor.commands.insertEmoji('<b>x</b>');
+    expect(editor.getHTML()).toBe('<p>&lt;b&gt;x&lt;/b&gt;</p>');
   });
 });

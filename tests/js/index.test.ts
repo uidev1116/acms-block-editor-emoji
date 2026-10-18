@@ -13,6 +13,7 @@ describe('index（入口）', () => {
 
   it('ACMS.plugins が無いページでは何もしない（例外も出さない）', async () => {
     (window as unknown as { ACMS: unknown }).ACMS = undefined;
-    await expect(import('../../frontend/index')).resolves.toBeDefined();
+    await import('../../frontend/index');
+    expect(window.ACMS).toBeUndefined();
   });
 });
