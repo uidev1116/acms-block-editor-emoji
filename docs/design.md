@@ -688,7 +688,7 @@ export function searchEmoji(data: EmojiEntry[], query: string, limit: number): E
 | # | 結果 |
 |---|---|
 | U-1 | エントリー編集画面（`ADMIN` = `entry_editor`）と一覧などの管理画面で `index.js` / `index.css` が出力される。公開側（`ADMIN` が空）では登録しない（`AssetRegistrar::shouldRegister()`）。公開側テーマ上のダイレクト編集・ユニットとしてのブロックエディターは `ADMIN` が空なので**対象外**（読み込まれない）。必要になったら条件を足す。 |
-| U-2 | **そのままでは不安定**。管理画面の JS（`/js/dest/admin.js`）は `async` で読み込まれるため、`type="module"` のプラグインが先に実行されて `ACMS.plugins` / `ACMS.Library.React` が無いことがある（ドキュメントの「実行順が保証される」は当てにならない）。IIFE は externals を読み込み時に束縛するので `Cannot read properties of undefined (reading 'React')` で落ちる。対策は (1)。 |
+| U-2 | **そのままでは不安定**。管理画面の JS（`/js/dest/admin.js`）は `async` で読み込まれるため、`type="module"` のプラグインが先に実行されて `ACMS.plugins` / `ACMS.Library.React` が無いことがある（ドキュメントの「実行順が保証される」は当てにならない）。IIFE は externals を読み込み時に束縛するので `Cannot read properties of undefined (reading 'React')` で落ちる。対策は 7 章「設計から変えた点」の 1。 |
 | U-3 | PHP から値は渡していない。`ctx.config.assetsUrl` があればそれを、無ければ `ACMS.Config.root` から組み立てた URL を使う（`frontend/plugin.ts` の `resolveAssetsUrl`）。 |
 | U-4 | 行頭・全角コロンとも動く。ただし `allowedPrefixes` に `' '` などを並べると日本語の直後（`今日は：ねこ`）で出ないため、`allowedPrefixes: null` にして、直前の文字は `allow`（`frontend/position.ts` の `isAllowedPosition`）で判定する。 |
 | U-5 | `Mod-Alt-e`（Mac は ⌘⌥E）で開く。コアが登録しているショートカット（`Mod-E` など）とは衝突しない。ショートカット一覧にも `block-editor` カテゴリで登録した。 |
@@ -696,7 +696,7 @@ export function searchEmoji(data: EmojiEntry[], query: string, limit: number): E
 
 ### 設計から変えた点
 
-1. **IIFE を ACMS.plugins の代入まで遅らせる**（vite.config.ts の `BOOT_BANNER` / `BOOT_FOOTER`）。出力全体を関数で包み、`ACMS.plugins` が既にあれば即実行、無ければ `ACMS.plugins` に setter を仕掛けて、`admin.js` が代入した直後に実行する。`ACMS` が無い・代入されないページでは何も実行しない。ビルド成果物の読み込みテスト（`tests/js/bundle-load.test.ts`）で順序の両パターンを検証している。
+1. **IIFE の実行を `ACMS.adminReady` まで遅らせる**（vite.config.ts の `BOOT_BANNER` / `BOOT_FOOTER`）。出力全体を関数で包み、コアが公開している `ACMS.adminReady(listener)`（`acms.js` が同期で定義。`admin.js` の初期化後に発火し、発火済みなら即時に実行される）で実行する。`ACMS.Ready` は `index.js` の読み込み完了で発火し `admin.js` を待たないので、`ACMS.plugins` がまだ無いことがあり使えない。管理画面以外（`adminReady` が発火しない）や `ACMS` が無いページでは何も実行しない。`register()` の例外は握りつぶして `console.error` に出す。エディター本体（遅延チャンク）の読み込みは `adminReady` の後なので、ファクトリの登録は間に合う。ビルド成果物の読み込みテスト（`tests/js/bundle-load.test.ts`）で、先に実行された場合・発火後に実行された場合・管理画面以外を検証している。
 2. **`process.env.NODE_ENV` を `define` で固定**。ライブラリモードは置換しないため、frimousse の `process.env.NODE_ENV` がそのまま残り、ブラウザで `ReferenceError` になる。テストで `process.` が残っていないことを検査している。
 3. **サジェストの位置判定を `allow` に集約**（上記 U-4）。コードブロック・インラインコード・直前が英数字（全角含む）のとき出さない。
 4. **サジェストは IME の変換中も表示する**。Suggestion は変換中のテキストにも反応するため、「確定後に出す」とはせず、変換中のキー操作（`isComposing` / `keyCode 229`）を無視することで、確定の Enter で絵文字が入らないようにした。実機の日本語 IME での確認は未了。
@@ -710,7 +710,7 @@ export function searchEmoji(data: EmojiEntry[], query: string, limit: number): E
 12. **選択範囲があるとき**は、その範囲を絵文字で置き換える（OS 標準のピッカーと同じ）。ピッカーを開く前の `from`〜`to` を保存して `insertContentAt` する。
 13. **候補の取得中（Tiptap 3.31 以降の `loading`）**は前の表示を保つ。毎回リストを作り直すと、入力のたびにちらつき、選択位置も戻ってしまう。
 14. **Enter / Tab は修飾キーなしのときだけ**確定に使う（Shift+Enter の改行などは奪わない）。
-15. **IIFE のラッパー**は `register()` の例外を握りつぶして `console.error` に出す。`ACMS.plugins` の代入は `admin.js` の初期化の途中で起きるため、例外が出ると管理画面の初期化が止まるから。
+15. **IIFE のラッパー**は `register()` の例外を握りつぶして `console.error` に出す（`adminReady` の通知を止めないため）。
 16. **ポップアップの破棄はエディター単位**：エディターを破棄したとき、そのエディターのポップアップだけ閉じる（`closeActivePopup(editor)`）。
 17. **ツールチップのショートカット表示**は Mac では ⌘⌥E、それ以外では Ctrl+Alt+E。ショートカット一覧のラベルは `setup()` の時点では翻訳が使えないため日本語固定（英語 UI でも日本語。要判断）。
 18. **CI**：`frontend` ジョブで `npm run coverage`（vitest のカバレッジ）も実行する。
