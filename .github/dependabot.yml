@@ -1,9 +1,8 @@
-# Keep the GitHub Actions and the npm dependencies up to date. Actions patch/minor bumps are
-# auto-merged by .github/workflows/dependabot-auto-merge.yml once CI passes; major bumps are reviewed
-# by hand. npm "dependencies" are bundled into the distributed JS, so they are never auto-merged.
+# Keep GitHub Actions, npm and Composer dependencies up to date (weekly).
 #
-# Composer is intentionally not tracked: its constraints are loose caret ranges on dev tools only,
-# and ablogcms/testing-framework is version-matched to a-blog cms by hand.
+# Auto-merge (.github/workflows/dependabot-auto-merge.yml): patch/minor updates of GitHub Actions and
+# of development dependencies (npm and Composer) are merged once CI passes. Major updates, and npm
+# runtime "dependencies" (they are bundled into the distributed JS), are reviewed by hand.
 version: 2
 updates:
   - package-ecosystem: 'github-actions'
@@ -17,31 +16,30 @@ updates:
         update-types:
           - 'minor'
           - 'patch'
+
   - package-ecosystem: 'npm'
     directory: '/'
+    schedule:
+      interval: 'weekly'
     ignore:
       # typescript-eslint supports TypeScript < 6.1 only. Revisit when it supports 6.1+ / 7.
       - dependency-name: 'typescript'
         versions: ['>=6.1.0']
-    schedule:
-      interval: 'weekly'
     groups:
-      github-actions:
-        patterns:
-          - '*'
+      npm-dev-dependencies:
+        dependency-type: 'development'
         update-types:
           - 'minor'
           - 'patch'
-  - package-ecosystem: 'npm'
+
+  # All Composer packages are development tools. ablogcms/testing-framework is pinned to the
+  # a-blog cms minor it tests against (3.2.*), so it stays on that line by its own constraint.
+  - package-ecosystem: 'composer'
     directory: '/'
-    ignore:
-      # typescript-eslint supports TypeScript < 6.1 only. Revisit when it supports 7.
-      - dependency-name: 'typescript'
-        update-types: ['version-update:semver-major']
     schedule:
       interval: 'weekly'
     groups:
-      dev-dependencies:
+      composer-dev-dependencies:
         dependency-type: 'development'
         update-types:
           - 'minor'
