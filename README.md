@@ -115,11 +115,15 @@ define('DB_CONNECTION_CHARSET', 'utf8mb4');
 ```bash
 npm ci
 npm run typecheck   # 型チェック
+npm run lint        # ESLint（lint:fix で自動修正）
+npm run format      # Prettier で整形（format:check は確認のみ）
 npm test            # vitest
 npm run coverage    # vitest + カバレッジ
 npm run build       # src/assets/ に書き出す（Git には含めない）
 npm run dev         # 変更を監視してビルド
 ```
+
+`npm ci` で husky が入り、コミット時に lint-staged が、変更したファイルへ ESLint と Prettier を実行します（`.husky/pre-commit`）。CI でも `lint` と `format:check` を実行します。
 
 `src/assets/`（JS / CSS / 絵文字データ）は Git に含めません。リリース（`v*` タグ）時に GitHub Actions がビルドして、配布用の zip にだけ含めます。
 
