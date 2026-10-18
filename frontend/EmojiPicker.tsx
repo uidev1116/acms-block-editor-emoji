@@ -130,16 +130,19 @@ export function EmojiPicker({ emojibaseUrl, onSelect, onClose, onDismiss }: Emoj
         if (next && !scope.contains(next)) onDismiss?.();
       }}
     >
-      <P.Search
-        id={searchId}
-        // id / name が無いフォーム要素は、ブラウザ（Chrome の Issues）に警告される。自動入力は不要
-        name="block-editor-emoji-search"
-        autoComplete="off"
-        aria-label={t('block-editor-emoji:search')}
-        className="acms-admin-emoji-picker__search"
-        placeholder={t('block-editor-emoji:search')}
-        onChange={(e) => setQuery(e.target.value)}
-      />
+      {/* 管理画面標準の入力欄の見た目（フォーム部品のスタイルは .acms-admin-form の中だけに効く） */}
+      <div className="acms-admin-form acms-admin-emoji-picker__search-wrap">
+        <P.Search
+          id={searchId}
+          // id / name が無いフォーム要素は、ブラウザ（Chrome の Issues）に警告される。自動入力は不要
+          name="block-editor-emoji-search"
+          autoComplete="off"
+          aria-label={t('block-editor-emoji:search')}
+          className="acms-admin-form-control acms-admin-emoji-picker__search"
+          placeholder={t('block-editor-emoji:search')}
+          onChange={(e) => setQuery(e.target.value)}
+        />
+      </div>
       {query === '' && <RecentRow onSelect={onSelect} />}
       <P.Viewport className="acms-admin-emoji-picker__viewport">
         <P.Loading className="acms-admin-emoji-picker__status">{t('block-editor-emoji:loading')}</P.Loading>

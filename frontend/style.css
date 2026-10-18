@@ -1,9 +1,8 @@
 /* ポップアップ（候補リスト・ピッカー）。管理画面の配色（--acms-*）があればそれに合わせる */
 .acms-admin-emoji-popup {
-  --emoji-fg: var(--acms-admin-color-text, #222);
+  --emoji-fg: #333;
   --emoji-border: var(--acms-admin-color-border, #d5d8dc);
-  --emoji-accent: var(--acms-admin-color-primary, #2b6cb0);
-  --emoji-hover: var(--acms-admin-color-bg-hover, #eef2f7);
+  --emoji-hover: #f1f1f1; /* 管理画面のメニュー項目の選択・ホバーと同じ */
   font-size: 14px;
   color: var(--emoji-fg);
 }
@@ -38,7 +37,6 @@
 
 .acms-admin-emoji-list__item[aria-selected='true'] {
   background: var(--emoji-hover);
-  outline: 1px solid var(--emoji-accent);
 }
 
 .acms-admin-emoji-list__emoji {
@@ -87,18 +85,14 @@
   gap: 8px;
 }
 
-.acms-admin-emoji-picker__search {
+.acms-admin-emoji-picker__search-wrap {
   margin: var(--emoji-pad-x) var(--emoji-pad-x) 4px;
-  padding: 6px 10px;
-  border: 1px solid var(--emoji-border);
-  border-radius: 6px;
-  background: var(--acms-admin-popover-bg, #fff);
-  color: inherit;
 }
 
-.acms-admin-emoji-picker__search:focus {
-  outline: 2px solid var(--emoji-accent);
-  outline-offset: -1px;
+/* 見た目は管理画面標準の入力欄（acms-admin-form-control）。幅だけ決める */
+.acms-admin-emoji-picker__search {
+  box-sizing: border-box;
+  width: 100%;
 }
 
 .acms-admin-emoji-picker__recent {

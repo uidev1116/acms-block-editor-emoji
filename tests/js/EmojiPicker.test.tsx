@@ -205,4 +205,12 @@ describe('EmojiPicker', () => {
     fireEvent.blur(search, { relatedTarget: outside });
     expect(onDismiss).toHaveBeenCalledTimes(1);
   });
+
+  it('検索欄は管理画面標準のフォーム部品（acms-admin-form 内の acms-admin-form-control）で描画する', () => {
+    stubFetch();
+    render(<EmojiPicker emojibaseUrl="/emojibase" onSelect={vi.fn()} onClose={vi.fn()} />);
+    const search = document.querySelector('input') as HTMLInputElement;
+    expect(search.classList.contains('acms-admin-form-control')).toBe(true);
+    expect(search.closest('.acms-admin-form')).not.toBeNull();
+  });
 });
