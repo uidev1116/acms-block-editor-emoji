@@ -1,5 +1,9 @@
 import { defineConfig } from 'vite';
+import { fileURLToPath } from 'node:url';
 import react from '@vitejs/plugin-react';
+
+// react-dom の代わり（理由は frontend/shims/react-dom.ts）
+export const reactDomShim = fileURLToPath(new URL('./frontend/shims/react-dom.ts', import.meta.url));
 
 const TIPTAP_PM = [
   'state',
@@ -44,6 +48,7 @@ if(A&&typeof A.adminReady==='function'){A.adminReady(__run);}
 
 export default defineConfig(({ mode }) => ({
   plugins: [react()],
+  resolve: { alias: [{ find: /^react-dom(\/client)?$/, replacement: reactDomShim }] },
   // ライブラリモードは process.env.NODE_ENV を置換しない。ブラウザには process が無いので固定する
   define: { 'process.env.NODE_ENV': JSON.stringify(mode === 'development' ? 'development' : 'production') },
   publicDir: false, // 絵文字データはビルド後に scripts/copy-emojibase.mjs でコピーする

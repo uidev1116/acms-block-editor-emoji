@@ -240,6 +240,7 @@ describe('コマンドとショートカット', () => {
       editor.commands.openEmojiPicker();
     });
     editor.destroy();
+    await flush();
     expect(document.querySelector('.acms-admin-emoji-popup')).toBeNull();
   });
 });

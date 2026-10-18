@@ -1,3 +1,5 @@
+import { Alert } from '@ablogcms/components/alert';
+import { ButtonV2 } from '@ablogcms/components/button-v2';
 import { t } from '@ablogcms/i18n';
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { EmojiPicker as P, defaultEmojiDataResolver, type EmojiDataResolver } from 'frimousse';
@@ -62,10 +64,14 @@ export function EmojiPicker({ emojibaseUrl, onSelect, onClose }: EmojiPickerProp
   const [failed, setFailed] = useState(false);
   const [query, setQuery] = useState('');
   const rootRef = useRef<HTMLDivElement>(null);
+  const errorRef = useRef<HTMLDivElement>(null);
 
-  // ツールバーのボタンから開いたとき、ボタンがフォーカスを持ち直すことがあるので、少し後に検索欄へ移す
+  // 開いた直後に検索欄へフォーカスする（ページをスクロールさせない）。ツールバーのボタンから開いたときは、ボタンがフォーカスを持ち直すことがあるので、少し後に行う
   useEffect(() => {
-    const timer = setTimeout(() => rootRef.current?.querySelector('input')?.focus(), 0);
+    const timer = setTimeout(() => {
+      const target = failed ? errorRef.current?.querySelector('button') : rootRef.current?.querySelector('input');
+      target?.focus({ preventScroll: true });
+    }, 0);
     return () => clearTimeout(timer);
   }, [attempt, failed]);
 
@@ -79,22 +85,17 @@ export function EmojiPicker({ emojibaseUrl, onSelect, onClose }: EmojiPickerProp
 
   if (failed) {
     return (
-      <div
-        className="acms-admin-emoji-picker acms-admin-emoji-picker--error"
-        role="alert"
-        onKeyDown={(e) => closeOnEscape(e, onClose)}
-      >
-        <p>{t('block-editor-emoji:loadError')}</p>
-        <button
-          type="button"
-          autoFocus
+      <div ref={errorRef} className="acms-admin-emoji-picker acms-admin-emoji-picker--error" onKeyDown={(e) => closeOnEscape(e, onClose)}>
+        <Alert variant="danger">{t('block-editor-emoji:loadError')}</Alert>
+        <ButtonV2
+          variant="outlined"
           onClick={() => {
             setFailed(false);
             setAttempt((n) => n + 1);
           }}
         >
           {t('block-editor-emoji:retry')}
-        </button>
+        </ButtonV2>
       </div>
     );
   }
@@ -114,7 +115,6 @@ export function EmojiPicker({ emojibaseUrl, onSelect, onClose }: EmojiPickerProp
       <P.Search
         className="acms-admin-emoji-picker__search"
         placeholder={t('block-editor-emoji:search')}
-        autoFocus
         onChange={(e) => setQuery(e.target.value)}
       />
       {query === '' && <RecentRow onSelect={onSelect} />}

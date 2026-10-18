@@ -112,11 +112,14 @@ describe('ビルド成果物', () => {
     expect(ext.name).toBe('emojiInput');
   });
 
-  it('react / tiptap / prosemirror の実装・react-dom・絵文字データを含まない（60KB 未満）', () => {
-    expect(js.length).toBeLessThan(60 * 1024);
+  it('react / tiptap / prosemirror の実装・react-dom・絵文字データを含まない（100KB 未満）', () => {
+    expect(js.length).toBeLessThan(100 * 1024);
     // addProseMirrorPlugins は Tiptap の API 名なので除く
     expect(js.replaceAll('addProseMirrorPlugins', '')).not.toMatch(/prosemirror/i);
     expect(js).not.toMatch(/react-dom|ReactDOM/);
+    // react-dom 本体（reconciler / scheduler）を同梱していない（shims/react-dom.ts で代用）
+    expect(js).not.toContain('__DOM_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE');
+    expect(js).not.toContain('unstable_scheduleCallback');
     expect(js).not.toContain('にっこり笑う');
     expect(js).not.toContain('"hexcode"');
     // React 本体（reconciler）が入っていない

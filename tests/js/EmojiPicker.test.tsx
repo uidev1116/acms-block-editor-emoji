@@ -109,6 +109,13 @@ describe('EmojiPicker', () => {
     expect(fetchMock).toHaveBeenCalled();
   });
 
+  it('エラー表示では「再試行」ボタンにフォーカスが移る', async () => {
+    stubFetch(false);
+    render(<EmojiPicker emojibaseUrl="/missing3" onSelect={vi.fn()} onClose={vi.fn()} />);
+    const retry = await screen.findByRole('button', { name: '再試行' });
+    await waitFor(() => expect(document.activeElement).toBe(retry));
+  });
+
   it('Esc はエラー表示でも効く。IME の変換中の Esc では閉じない', async () => {
     stubFetch(false);
     const onClose = vi.fn();

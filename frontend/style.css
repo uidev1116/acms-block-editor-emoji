@@ -1,6 +1,5 @@
 /* ポップアップ（候補リスト・ピッカー）。管理画面の配色（--acms-*）があればそれに合わせる */
 .acms-admin-emoji-popup {
-  --emoji-bg: var(--acms-admin-color-bg, #fff);
   --emoji-fg: var(--acms-admin-color-text, #222);
   --emoji-border: var(--acms-admin-color-border, #d5d8dc);
   --emoji-accent: var(--acms-admin-color-primary, #2b6cb0);
@@ -9,21 +8,23 @@
   color: var(--emoji-fg);
 }
 
-.acms-admin-emoji-list,
-.acms-admin-emoji-picker {
-  background: var(--emoji-bg);
-  border: 1px solid var(--emoji-border);
-  border-radius: 8px;
-  box-shadow: 0 6px 24px rgb(0 0 0 / 16%);
+/* 枠・背景・影・z-index は管理画面の Popover（.acms-admin-popover）が持つ。ここでは寸法だけ決める */
+.acms-admin-emoji-popup--list {
+  --acms-admin-popover-min-width: 240px;
+  max-width: 360px;
+}
+
+.acms-admin-emoji-popup--picker {
+  --acms-admin-popover-padding-x: 0;
+  --acms-admin-popover-padding-y: 0;
+  width: 340px;
 }
 
 /* S1：縦リスト */
 .acms-admin-emoji-list {
   list-style: none;
   margin: 0;
-  padding: 4px;
-  min-width: 240px;
-  max-width: 360px;
+  padding: 0;
 }
 
 .acms-admin-emoji-list__item {
@@ -61,7 +62,7 @@
 .acms-admin-emoji-picker {
   display: flex;
   flex-direction: column;
-  width: 340px;
+  width: 100%;
   height: 380px;
   max-height: var(--acms-admin-emoji-max-height, 380px);
   isolation: isolate;
@@ -69,7 +70,7 @@
 
 .acms-admin-emoji-picker--error {
   height: auto;
-  padding: 16px;
+  padding: 12px;
   gap: 8px;
 }
 
@@ -78,7 +79,7 @@
   padding: 6px 10px;
   border: 1px solid var(--emoji-border);
   border-radius: 6px;
-  background: var(--emoji-bg);
+  background: var(--acms-admin-popover-bg, #fff);
   color: inherit;
 }
 
@@ -127,7 +128,7 @@
 
 .acms-admin-emoji-picker [frimousse-category-header] {
   padding: 8px 12px 4px;
-  background: var(--emoji-bg);
+  background: var(--acms-admin-popover-bg, #fff);
   color: #6b7280;
   font-size: 12px;
   font-weight: 600;

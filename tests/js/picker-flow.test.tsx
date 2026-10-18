@@ -1,4 +1,4 @@
-import { act, fireEvent, screen } from '@testing-library/react';
+import { act, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createEmojiExtension } from '../../frontend/extension';
 import { closeActivePopup } from '../../frontend/popup';
@@ -42,18 +42,21 @@ describe('ピッカーを開く流れ', () => {
     });
     expect(editor.getHTML()).toBe('<p>ab😄cd</p>');
     expect(getRecent()).toEqual(['😄']);
-    expect(document.querySelector('.acms-admin-emoji-popup')).toBeNull();
+    await waitFor(() => expect(document.querySelector('.acms-admin-emoji-popup')).toBeNull());
   });
 
   it('閉じるとエディターにフォーカスを戻し、何も挿入しない', async () => {
     const editor = open('<p>abcd</p>', 3);
+    // ピッカーを操作している間はエディターはフォーカスを持っていない
+    (document.activeElement as HTMLElement | null)?.blur();
     const focus = vi.spyOn(editor.view, 'focus');
     await act(async () => {
       fireEvent.click(await screen.findByText('close'));
     });
     expect(editor.getHTML()).toBe('<p>abcd</p>');
-    expect(document.querySelector('.acms-admin-emoji-popup')).toBeNull();
-    expect(focus).toHaveBeenCalled();
+    await waitFor(() => expect(document.querySelector('.acms-admin-emoji-popup')).toBeNull());
+    // Tiptap の focus コマンドは requestAnimationFrame の中で view.focus() を呼ぶ
+    await waitFor(() => expect(focus).toHaveBeenCalled());
   });
 
   it('選択範囲があるときはその範囲を置き換える', async () => {

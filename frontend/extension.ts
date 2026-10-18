@@ -66,7 +66,7 @@ export function openPicker(tiptap: Tiptap, editor: Editor, deps: Deps): void {
       },
     },
     rect,
-    { onOutsideClick: () => popup.destroy() },
+    { variant: 'picker', onOutsideClick: () => popup.destroy() },
   );
 }
 
