@@ -1,59 +1,150 @@
-# acms-block-editor-emoji
+# BlockEditorEmoji
 
-a-blog cms のブロックエディターに、絵文字の**サジェスト**と**ピッカー**を追加するプラグイン。
+a-blog cms のブロックエディターに、絵文字のサジェストとピッカーを追加するプラグイン（拡張アプリ）です。
 
-- **サジェスト**：本文で `:`（半角）または `：`（全角）に続けて入力すると候補が出る（`:smile`、`：ねこ`）。↑↓ で選択、Enter / Tab で確定、Esc で閉じる。
-- **ピッカー**：ツールバーの絵文字ボタン、または `⌘⌥E`（Windows は `Ctrl+Alt+E`）で、検索・カテゴリ・肌の色・最近使った絵文字つきのピッカーを開く。
-- 絵文字は Unicode の文字そのものとして本文に入る。保存される HTML に余計な要素は無く、プラグインを無効にしても本文は変わらない。
+## 概要
 
-設計は [docs/design.md](docs/design.md)。
+本文で `:` や `：` に続けて入力すると候補が出て、ツールバーのボタンからは検索付きのピッカーを開けます。絵文字は Unicode の文字そのものとして本文に入るので、保存される HTML に余計な要素は増えず、プラグインを無効にしても本文は変わりません。
+
+## 主要機能
+
+- **サジェスト**: `:smile` や `：ねこ` のように入力すると、絵文字・名前・ショートコードの縦リスト（最大 8 件）を表示。日本語（ひらがな・カタカナ）と英語のショートコードで検索できます
+- **キーボード操作**: ↑↓ で選択、Enter / Tab で確定、Esc で閉じる。日本語 IME の変換中のキー操作は無視します
+- **ピッカー**: ツールバーの絵文字ボタン、または `⌘⌥E`（Windows は `Ctrl+Alt+E`）で開く。検索・カテゴリ・肌の色・最近使った絵文字に対応
+- **誤爆の防止**: `10:30` や `https://`、コードブロック・インラインコードの中では候補を出しません
+- **保存できる DB のときだけ有効**: 絵文字（4バイト文字）を保存できない DB では自動的に無効になります
+- **設定画面でオン／オフ**: ブログごとに機能を切り替えられます
+- **管理画面のデザインに統一**: 管理画面のデザインシステムの部品（Popover など）を使用
+- **外部への通信なし**: 絵文字データ（[emojibase](https://github.com/milesj/emojibase)）はプラグインに同梱し、CDN には接続しません
 
 ## 動作環境
 
-- a-blog cms 3.2 系（ブロックエディターのプラグイン拡張基盤 `ACMS.plugins` が必要）
-- PHP 8.1 – 8.5
+- **a-blog cms**: Ver.3.2.37 で動作確認（ブロックエディターのプラグイン拡張基盤 `ACMS.plugins` が必要）
+- **PHP**: >= 8.1
 
-## インストール
+### 絵文字を保存できる DB
 
-1. [Releases](https://github.com/uidev1116/acms-block-editor-emoji/releases) の zip を展開して、`BlockEditorEmoji` を `extension/plugins/` に置く（zip にはビルド済みの JS / CSS / 絵文字データが入っている）。リポジトリを直接取得した場合は `src/assets/` が無いので、`npm ci && npm run build` が必要。
-2. 管理画面の「拡張アプリ」で `BlockEditorEmoji` をインストールして有効化する。
-3. ブロックエディターのあるエントリー編集画面を開いて確認する。
+コアのライトエディターの絵文字ピッカーと同じ条件で、**DB の接続文字コードが `utf8mb4` のときだけ**絵文字の入力が有効になります。そうでない DB に絵文字を保存すると、`?` などに化けるためです。
 
-JS / CSS / 絵文字データ（`assets/`）はリリースの zip にだけ含まれる（リポジトリには無い）。絵文字データは `assets/emojibase/` から自前で配信し、外部の CDN には接続しない。
+`config.server.php` に次の設定があることを確認してください。あわせて、DB のカラムも `utf8mb4` に変換されている必要があります（「管理画面 > ダッシュボード」の診断で確認できます）。
 
-## 開発
+```php
+define('DB_CONNECTION_CHARSET', 'utf8mb4');
+```
 
-必要なもの：Node 22（`.node-version`）、Docker（PHP のテスト用）。
+## ダウンロード
+
+[BlockEditorEmoji](https://github.com/uidev1116/acms-block-editor-emoji/releases/latest)
+
+## インストール方法
+
+プラグイン（拡張アプリ）をダウンロード後、zip ファイルを解凍して `extension/plugins/` に設置します。zip には、ビルド済みの JS / CSS / 絵文字データが含まれています。
+
+設置が完了すると、「管理画面 > プラグイン（拡張アプリ）」に `BlockEditorEmoji` という名前で本プラグイン（拡張アプリ）が表示されるので、インストールをクリックしインストールします。
+
+> リポジトリを直接取得した場合は、JS / CSS / 絵文字データ（`src/assets/`）が含まれません。「開発者向け情報」の手順でビルドしてください。
+
+## 使用方法
+
+### 1. 絵文字を入力する（サジェスト）
+
+1. ブロックエディターの段落で `:` または `：`（全角）に続けて、絵文字の名前を入力します（例: `:smile`、`：ねこ`）
+2. 候補が表示されるので、↑↓ で選んで Enter（または Tab）で確定します。マウスでクリックしても選べます
+3. Esc で候補を閉じると、そのまま通常の入力を続けられます
+
+### 2. 絵文字を探す（ピッカー）
+
+1. ツールバーの絵文字ボタン、または `⌘⌥E`（Windows は `Ctrl+Alt+E`）を押します
+2. 検索欄に入力して絞り込むか、カテゴリから選びます（検索は、ひらがな・カタカナのどちらでも見つかります）
+3. 絵文字を選ぶと、ピッカーを開く前のカーソル位置に入ります
+
+### 3. 機能のオン／オフを切り替える
+
+「管理画面 > プラグイン（拡張アプリ）」の `BlockEditorEmoji` の設定から、ブログごとに絵文字の入力をオン／オフできます（初期値はオン）。DB が `utf8mb4` でないときは、画面に警告が表示されます。
+
+## 挙動
+
+- 絵文字は Unicode の文字として本文に挿入されます（新しいノードや HTML 要素は作りません）
+- テキストを選択した状態でピッカーから選ぶと、選択範囲が絵文字に置き換わります
+- 見出し・リスト・表のセルの中でも使えます。コードブロックの中では使えません（ツールバーのボタンも無効になります）
+- 最近使った絵文字は、ブラウザの localStorage に最大 24 件まで保存されます
+- 絵文字データは、初めて使うときだけ読み込みます（使わない画面では読み込みません）
+- 読み込みに失敗した場合は、ピッカーにエラーと「再試行」ボタンを表示します。エディターの入力には影響しません
+- 管理画面でのみ読み込まれます。公開側のページや、ダイレクト編集には対応していません
+
+## Tips
+
+### サジェストが出ない
+
+次を順に確認してください。
+
+1. 設定画面で、機能がオンになっているか
+2. DB の接続文字コードが `utf8mb4` か（ブラウザのコンソールに「DB の接続文字コードが utf8mb4 ではない」という `info` が出ている場合は、これが原因です）
+3. 直前の文字が英数字ではないか（`10:30` のような入力では出しません）。スペースや日本語の直後であれば出ます
+4. コードブロックやインラインコードの中ではないか
+
+### 日本語入力のまま使う
+
+全角の `：` でも同じように使えます。変換中の Enter で、絵文字が誤って確定されることはありません。
+
+## トラブルシューティング
+
+### よくある問題
+
+**Q: ピッカーに「絵文字データを読み込めませんでした」と表示される**
+- `extension/plugins/BlockEditorEmoji/assets/emojibase/` が設置されていることを確認
+- ブラウザの開発者ツールで、`.../assets/emojibase/ja/data.json` が取得できているか確認
+- リポジトリを直接取得した場合は、ビルドが必要です（「開発者向け情報」を参照）
+
+**Q: 保存した絵文字が `?` に化ける**
+- `config.server.php` の `DB_CONNECTION_CHARSET` を `utf8mb4` にし、DB のカラムも `utf8mb4` に変換してください
+
+**Q: ブロックエディターに絵文字ボタンが出ない**
+- プラグインがインストール・有効化されているか確認（有効化はブログごとです）
+- 設定画面で、機能がオンになっているか確認
+
+**Q: コア（a-blog cms）を更新したら動かなくなった**
+- `package.json` の `@ablogcms/*` をコアと同じバージョンに合わせ、ビルドし直してください（下記）
+
+## 開発者向け情報
+
+必要なもの: Node 22（`.node-version`）、Docker（PHP のテスト用）
 
 ```bash
 npm ci
 npm run typecheck   # 型チェック
 npm test            # vitest
 npm run coverage    # vitest + カバレッジ
-npm run build       # src/assets/ に書き出す（Git には含めない。リリース時に CI がビルドして配布用の zip にだけ含める）
+npm run build       # src/assets/ に書き出す（Git には含めない）
 npm run dev         # 変更を監視してビルド
 ```
 
-PHP（`docker compose` でコンテナを起動する。ポートは `.env` の `ACMS_PORT`、既定 8080）：
+`src/assets/`（JS / CSS / 絵文字データ）は Git に含めません。リリース（`v*` タグ）時に GitHub Actions がビルドして、配布用の zip にだけ含めます。
+
+PHP のテスト（`.env` の `ACMS_PORT` でポートを変えられます。既定は 8080）:
 
 ```bash
 cp .env.example .env
 docker compose up -d --wait
 docker compose exec acms bash -lc "cd /workspace && composer install && ACMS_ROOT=/var/www/html vendor/bin/acms-create-database"
 docker compose exec acms bash -lc "cd /workspace && composer lint && composer analyse && composer test"
-docker compose exec acms bash -lc "cd /workspace && composer coverage"   # カバレッジ
+docker compose exec acms bash -lc "cd /workspace && composer coverage"
 ```
 
-バックエンドのリポジトリに submodule として取り込んだ場合は、`npm run setup`（`tools/setup.js`）が `ablogcms/extension/plugins/BlockEditorEmoji` にシンボリックリンクを作る。
+バックエンドのリポジトリに submodule として取り込んだ場合は、`npm run setup`（`tools/setup.js`）が `ablogcms/extension/plugins/BlockEditorEmoji` にシンボリックリンクを作り、ビルドします。
 
-## コア更新時の確認事項
+### コア更新時の確認事項
 
-`@ablogcms/*` はインストール済みのコアと同じバージョンに固定している（拡張 API の型がコアと一致している必要がある）。コアを更新したら次を確認する。
+`@ablogcms/*` は、インストール済みのコアと同じバージョンに固定しています（拡張 API の型がコアと一致している必要があるため）。コアを更新したら次を確認してください。
 
-1. `package.json` の `@ablogcms/*` を合わせて上げ、`npm run typecheck` / `npm test` / `npm run build` を通す。
-2. エントリー編集画面で、サジェスト（`:smile`、`：ねこ`）、ツールバーのボタン、`⌘⌥E` のピッカーが動くこと。
-3. `blockMenu`（ツールバーの宣言）と `Suggestion` の仕様がコアの更新で変わっていないこと。
+1. `package.json` の `@ablogcms/*` を合わせて上げ、`npm run typecheck` / `npm test` / `npm run build` を通す
+2. エントリー編集画面で、サジェスト（`:smile`、`：ねこ`）、ツールバーのボタン、`⌘⌥E` のピッカーが動くこと
+3. `blockMenu`（ツールバーの宣言）と `Suggestion` の仕様がコアの更新で変わっていないこと
+
+### ドキュメント
+
+- [設計書](docs/design.md)
 
 ## ライセンス
 
-MIT。絵文字データは [emojibase-data](https://github.com/milesj/emojibase)（MIT）。
+MIT License。絵文字データは [emojibase-data](https://github.com/milesj/emojibase)（MIT License）です。
