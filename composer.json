@@ -44,7 +44,8 @@
         "version:set": "@php scripts/version.php",
         "release:patch": "@php scripts/release.php patch",
         "release:minor": "@php scripts/release.php minor",
-        "release:major": "@php scripts/release.php major"
+        "release:major": "@php scripts/release.php major",
+        "coverage": "php -d pcov.enabled=1 -d pcov.directory=/var/www/html/extension/plugins/BlockEditorEmoji vendor/bin/phpunit -c phpunit.coverage.xml.dist --coverage-text"
     },
     "prefer-stable": true,
     "config": {

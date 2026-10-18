@@ -29,9 +29,38 @@ jobs:
       - name: Static analysis (PHPStan)
         run: docker compose exec -T acms bash -lc "cd /workspace && composer analyse"
 
+      - name: PHP coverage report
+        run: docker compose exec -T acms bash -lc "cd /workspace && composer coverage"
+
       - name: Show a-blog cms logs on failure
         if: failure()
         run: docker compose logs acms
+
+  # Front end (TypeScript / Vite). The build output (src/assets) is not committed; it is built here
+  # only to prove the build works, and by the release workflow for the distributed package.
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: npm
+
+      - run: npm ci
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Unit tests (with coverage)
+        run: npm run coverage
+
+      - name: Build
+        run: npm run build
+
+      - name: Build output exists
+        run: test -s src/assets/index.js && test -s src/assets/index.css && test -s src/assets/emojibase/ja/data.json
 
   # Run PHPUnit against every supported PHP (and a-blog cms) version.
   phpunit:
@@ -78,13 +107,13 @@ jobs:
   # Keep this job id "test" so the existing branch-protection required check keeps matching.
   test:
     runs-on: ubuntu-latest
-    needs: [quality, phpunit]
+    needs: [quality, frontend, phpunit]
     if: always()
     steps:
       - name: Verify required jobs succeeded
         run: |
-          echo "quality=${{ needs.quality.result }} phpunit=${{ needs.phpunit.result }}"
-          if [ "${{ needs.quality.result }}" != "success" ] || [ "${{ needs.phpunit.result }}" != "success" ]; then
+          echo "quality=${{ needs.quality.result }} frontend=${{ needs.frontend.result }} phpunit=${{ needs.phpunit.result }}"
+          if [ "${{ needs.quality.result }}" != "success" ] || [ "${{ needs.frontend.result }}" != "success" ] || [ "${{ needs.phpunit.result }}" != "success" ]; then
             echo "::error::A required job failed."
             exit 1
           fi

@@ -2,13 +2,12 @@
 
 a-blog cms のブロックエディターに機能を追加する**独立したプラグイン**の設計書。この 1 冊だけで実装を始められるようにしてある。
 
-関連：[画像フロート（BlockEditorImageFloat） の設計書](https://github.com/uidev1116/acms-block-editor-image-float/blob/master/docs/design.md)（別プラグイン。依存関係はなく、並行して実装できる）
 
-作成 2026-10-18 ／ 対象 @ablogcms/* 3.2.37（Tiptap 3.3x / React 19） ／ ビルド Vite 8 ライブラリモード（IIFE） ／ plugins/BlockEditorEmoji/
+作成 2026-10-18 ／ 動作条件 a-blog cms 3.2.36 以上 ／ 対象 @ablogcms/* 3.2.37（Tiptap 3.3x / React 19） ／ ビルド Vite 8 ライブラリモード（IIFE） ／ plugins/BlockEditorEmoji/
 
-> **UI パターンはユーザーが選ぶ（未決定）**
+> **UI パターン：S1（縦リスト）・T1（ツールバーのボタン＋ショートカット）・P1（フルピッカー）で実装した**
 >
-> UI は UI モック（バックエンドの `docs/block-editor-plugins/emoji/ui-mock.html`。手元で見る用でコミットしない。要約は付録） で 3 つの観点（S1/S2 候補の見た目・T1〜T3 開き方・P1/P2 ピッカーの形）を比較中。本書のコード例は 【推奨】 案（S1・T1・P1）で書いてある。T2 に決まった場合は `registerBlockDefinition` の追加、T3 なら frimousse とピッカーが不要になる。保存形式（4.2）はどの案でも同じ。 選んだパターン ID は、実装セッションへのプロンプト（手順書（バックエンドの `docs/block-editor-plugins/runbook.html`。手元で見る用でコミットしない））に書き添えること。
+> 3 つの観点（S1/S2 候補の見た目・T1〜T3 開き方・P1/P2 ピッカーの形。付録に要約）のうち、推奨案を採用した。T2 に変える場合は `registerBlockDefinition` の追加、T3 なら frimousse とピッカーが不要になる。保存形式（4.2）はどの案でも同じ。実装で確認したこと・当初の設計から変えた点は 6 章にまとめてある。
 
 ## 1. 概要とゴール
 
@@ -37,7 +36,7 @@ npm の `@ablogcms` スコープには 3.2.37 時点で 23 パッケージがあ
 | `@ablogcms/i18n` | `t()` のファサード（`ACMS.i18n` に委譲） | 【実行時】 | ツールチップなどの翻訳を引く。登録は `ctx.i18n.addResources`、参照は `t('plugin-name:key')`。 |
 | `@ablogcms/events` | 型付きイベントバス（`ACMS.events`） | 【使わない】 | この機能はエディター内で完結し、フックすべきイベントが無い（ブロックエディター系のイベントは未定義）。購読が必要になったら `ctx.events.on` を使う（直接 import は不要）。 |
 | `@ablogcms/types` | 横断型。`MaterialSymbol` 等 | 【型だけ】 | アイコン名の型チェック。`add_reaction` が存在することを確認済み。 |
-| `@ablogcms/components` | 管理画面 UI 部品（popover, dropdown-menu など） | 【使わない】 | `react-dom`・`@floating-ui/react`・`@dnd-kit` などに依存し、`ReactDOM` はグローバルに公開されていないため、同梱すると重いうえに二重化する。ツールバーのボタンはホストの描画（`BlockMenuButtonItem`）に任せる。 |
+| `@ablogcms/components` | 管理画面 UI 部品（popover, button-v2, alert など） | 【実行時（必要な部品だけ）】 | デザインシステムの `Popover`（候補リストとピッカーの枠・位置合わせ・外側クリック・z-index）、`Alert`、`ButtonV2`（ピッカーのエラー表示）を使い、管理画面と見た目をそろえる。`@floating-ui/react` や `classnames` が同梱される。`react-dom` は公開されていないので、代用品（`frontend/shims/react-dom.ts`）に差し替える（6 章）。個別のサブパス（`/popover` など）から import し、`@ablogcms/components` のルートや、`@dnd-kit` などに依存する部品は import しない。 |
 | `@ablogcms/react-utils` / `react-hooks` | React ヘルパー | 【使わない】 | 必要なのは `ReactRenderer`（Tiptap 由来、ランタイムで渡される）だけ。 |
 | `@ablogcms/dialog` / `notify` / `media` ほか | — | 【使わない】 | 不要。 |
 
@@ -126,7 +125,7 @@ ctx.blockEditor.registerExtension('details', async () => {
 
 - そのパッケージが import する `@tiptap/core`・`@tiptap/pm/*`・`@tiptap/suggestion`・`@tiptap/react` は、3.2 の externals でホストの実体に置き換わる。それ以外の依存（例：`@tiptap/extensions`）はホストが公開していないのでプラグインに同梱される。
 - バージョンはホストの Tiptap（`@ablogcms/block-editor` が依存している版）とメジャー・マイナーを合わせる。
-- この挙動はバンドラーの実装に依存するので、**ビルド成果物の読み込みテスト**（Tiptap が無い状態でプラグインの JS を読み込んでも例外にならず、Tiptap を用意した後にファクトリが拡張を返すこと）を vitest に入れておく（5 章）。
+- この挙動はバンドラーの実装に依存するので、**ビルド成果物の読み込みテスト**（Tiptap が無い状態でプラグインの JS を読み込んでも例外にならず、Tiptap を用意した後にファクトリが拡張を返すこと）を vitest に入れておく。
 
 **絵文字辞書を JS に含めない理由**：辞書（emojibase の `ja/data.json`）は約 720KB（gzip で約 95KB）ある。IIFE はファイルを分けられないので、JS に含めると実行は後回しにできても**ダウンロードは毎回**発生し、プラグインの JS（約 60KB）が約 800KB に膨らむ。絵文字を一度も使わない管理画面のページでも読み込まれることになる。そこで辞書は `src/assets/emojibase/` に別ファイルとして置き、`:` を初めて入力したときやピッカーを初めて開いたときに `fetch` で取りに行く（4.5 (5)）。
 
@@ -140,7 +139,7 @@ ctx.blockEditor.registerExtension('details', async () => {
 | `@tiptap/react` | `ACMS.Library.tiptap.react` | 同上 | 〃 |
 | `@tiptap/suggestion` | `ACMS.Library.tiptap.suggestion` | 同上 | 〃 |
 | `@tiptap/pm/state` など | `ACMS.Library.tiptap.pm.state` など | 同上 | 〃 |
-| `react-dom` | —（公開されていない） | — | **import しない**。ポップアップは Tiptap の `ReactRenderer`（ホストの React ツリーにポータルで描画する）を使う。 |
+| `react-dom` | —（公開されていない） | — | **本物は同梱しない**。`@ablogcms/components` の Popover が使う `@floating-ui/react` は `react-dom` の `createPortal` / `flushSync` だけを使うので、vite の alias で `frontend/shims/react-dom.ts`（この 2 つだけを置いた代用品）に差し替える。ポータルの描画はホストの React DOM が行う。 |
 
 ### 3.3 リポジトリ構成（acms-plugin-skeleton がベース）
 
@@ -177,22 +176,10 @@ acms-block-editor-emoji/                 ← GitHub: uidev1116/acms-block-editor
     ├── ServiceProvider.php           # $version がバージョンの正（タグと一致させる）
     ├── Hook.php                      # afterBuild() → AssetRegistrar（3.5）
     ├── Services/AssetRegistrar.php   # 読み込み判定とパス組み立て（PHPUnit で単体テスト）
-    └── assets/                       # vite build の出力（コミットする）
+    └── assets/                       # vite build の出力（Git には含めない。リリース時にビルドして zip にだけ含める）
         ├── index.js
         ├── index.css
         └── emojibase/               # ja/data.json, ja/messages.json, en/shortcodes/github.json
-```
-
-**スケルトンから削除するもの**：`src/GET/`・`src/POST/`・`src/Modules/`・`src/Corrector.php`・`src/Validator.php`・`src/Services/SampleService.php`・`src/template/`・サンプルのテスト、と `ServiceProvider::init()` 内のそれらの登録。
-
-**スケルトンの始め方**（名前の置換スクリプトは対話入力を求めるので、引数で渡す）：
-
-```bash
-composer create-project ablogcms/plugin-skeleton acms-block-editor-emoji --no-scripts --no-interaction
-cd acms-block-editor-emoji
-php scripts/namespace.php BlockEditorEmoji      # Skeleton → BlockEditorEmoji に置換（スクリプトは自分自身を削除する）
-rm -f CONTRIBUTING.md                  # スケルトン用の文書。LICENSE は自分の名前の MIT に差し替える
-git init -b master && git add -A && git commit -m "Initial commit from ablogcms/plugin-skeleton"
 ```
 
 名前の対応：
@@ -216,14 +203,15 @@ git init -b master && git add -A && git commit -m "Initial commit from ablogcms/
     "setup": "npm run build",              // バックエンドの tools/setup.js が submodule ごとに呼ぶ（必須）
     "dev": "vite build --watch --mode development",
     "typecheck": "tsc --noEmit",
-    "build": "vite build" && node scripts/copy-emojibase.mjs,
+    "coverage": "vitest run --coverage",
+    "build": "vite build && node scripts/copy-emojibase.mjs",
     "test": "vitest run"
   },
   "dependencies": {
     "@ablogcms/plugins": "3.2.37",
     "@ablogcms/i18n": "3.2.37",
-    "frimousse": "^0.4.0",
-    "@floating-ui/dom": "^1"
+    "@ablogcms/components": "3.2.37",
+    "frimousse": "^0.4.0"
   },
   "devDependencies": {
     "@ablogcms/block-editor": "3.2.37",   // 型だけ（import type）
@@ -266,6 +254,7 @@ const globals: Record<string, string> = {
 
 export default defineConfig(({ mode }) => ({
   plugins: [react()],
+  define: { 'process.env.NODE_ENV': JSON.stringify('production') }, // 6 章 (2)
   publicDir: false,              // 絵文字データはビルド後に別途コピーする（4.5 (6)）
   build: {
     outDir: 'src/assets',
@@ -282,13 +271,13 @@ export default defineConfig(({ mode }) => ({
     // Vite 8 は Rolldown。rollupOptions は互換エイリアスとして残っているが、新しい名前は rolldownOptions
     rolldownOptions: {
       external: (id) => id in globals,
-      output: { globals },
+      output: { globals, banner: BOOT_BANNER, footer: BOOT_FOOTER }, // 6 章 (1)：実行を ACMS.adminReady まで遅らせる
     },
   },
 }));
 ```
 
-ビルド後、`src/assets/index.js` に `react` や `@tiptap` の実装が含まれていないことを確認する（`grep -c "prosemirror" src/assets/index.js` が 0、バンドルサイズの目安は 60KB 未満、絵文字データも含まれていないこと）。
+ビルド後、`src/assets/index.js` に `react` や `@tiptap` の実装が含まれていないことを確認する（`grep -c "prosemirror" src/assets/index.js` が 0、バンドルサイズの目安は 100KB 未満（デザインシステムの Popover と `@floating-ui/react` を含む）、絵文字データも含まれていないこと）。
 
 **`plugins/BlockEditorEmoji/tsconfig.json（要点）`**
 
@@ -358,7 +347,7 @@ class Hook
 
     public function afterBuild(&$res)
     {
-        // 管理画面（エントリー編集画面を含む）だけで読み込む。判定方法は 6 章 U-1 で確認する
+        // 管理画面（エントリー編集画面を含む）だけで読み込む。判定方法は 5 章 U-1 で確認する
         if (!defined('ADMIN') || !ADMIN) {
             return;
         }
@@ -384,11 +373,11 @@ class Hook
 
 | 項目 | 方針 |
 |---|---|
-| リポジトリ | `uidev1116/acms-block-editor-emoji`（public。ApiPreview と同じ）。既定ブランチは `master`。初回コミット（スケルトンを置換しただけの状態）だけを `master` に置き、実装は `feat/initial-implementation` ブランチで行って PR を出す。マージは人が行う。 |
+| リポジトリ | `uidev1116/acms-block-editor-emoji`（public。ApiPreview と同じ）。既定ブランチは `master`。 |
 | バックエンドへの取り込み | `git submodule add git@github.com:uidev1116/acms-block-editor-emoji.git plugins/BlockEditorEmoji`（`.gitmodules` は既存の ApiPreview と同じ SSH URL。デプロイの CI は HTTPS に読み替える）。`npm run setup`（`tools/setup.js`）が `ablogcms/extension/plugins/BlockEditorEmoji → ../../../plugins/BlockEditorEmoji/src` のシンボリックリンクを作る。Docker の web コンテナは `./plugins` を `/var/www/plugins` にマウントしているので、このリンクがそのまま効く。 |
 | `npm run setup` | `tools/setup.js` は各 submodule で `npm ci` → `npm run setup` を実行するので、`package.json` に `setup` スクリプトが**必須**（`"setup": "npm run build"`）。 |
-| ビルド成果物 | `src/assets/` をコミットする。バックエンドのデプロイは `plugins/BlockEditorEmoji/src/` をそのまま rsync し、プラグインのビルドはしないため。CI で「ビルドし直しても差分が出ない」ことを検査して、コミット漏れを防ぐ。 |
-| CI（`test.yml`） | スケルトンの `quality`（phpcs・PHPStan）と `phpunit`（PHP 8.1〜8.5 × a-blog cms 3.2）はそのまま使い、`frontend` ジョブを追加する：`setup-node`（`.node-version`）→ `npm ci` → `npm run typecheck` → `npm test` → `npm run build` → `git diff --exit-code src/assets`。集約ジョブ `test` の `needs` に `frontend` を足す。 |
+| ビルド成果物 | `src/assets/` は **Git に含めない**（`.gitignore`）。リリース時（`v*` タグ）に `release.yml` が `npm ci && npm run build` でビルドし、配布用の zip にだけ含める。`test.yml` の `frontend` ジョブでも、ビルドが通り成果物ができることだけを確認する。ローカルでは `npm run setup`（= `npm run build`）で作る。**バックエンドの現行デプロイ（`plugins/*/src` の rsync）はビルドしないため、そのままでは `assets/` が本番に届かない**。本番へは、リリースの zip を展開して反映するか、バックエンドのデプロイにビルド手順を足す必要がある（6 章の要判断事項）。 |
+| CI（`test.yml`） | スケルトンの `quality`（phpcs・PHPStan）と `phpunit`（PHP 8.1〜8.5 × a-blog cms 3.2）はそのまま使い、`frontend` ジョブを追加する：`setup-node`（`.node-version`）→ `npm ci` → `npm run typecheck` → `npm run coverage` → `npm run build` → 成果物ができていること。集約ジョブ `test` の `needs` に `frontend` を足す。 |
 | リリース | スケルトンのまま。`composer release:patch` などで `ServiceProvider::$version` を上げてタグを打ち、push すると `release.yml` が zip を GitHub Release に公開する。`package.json` の `version` と `frontend/index.ts` の `version` も同じ値にそろえる。 |
 | 本番デプロイ | プラグインの PR をマージした後、バックエンドで submodule の参照先を更新してコミットし、既存のデプロイ（`.github/workflows/deploy.yml`、rsync）で反映する。デプロイのワークフローは変更しない。**デプロイは明示的に許可されたときだけ**行う。 |
 
@@ -418,10 +407,10 @@ class Hook
 | ライブラリ | 入手元 | 用途 | 判断理由 |
 |---|---|---|---|
 | `Suggestion` | **ランタイム**（`tiptap.suggestion`） | `:` トリガーの検出・候補の状態管理 | ホストがスラッシュコマンドに使っているのと同じ実体。同梱しない。 |
-| `ReactRenderer` | **ランタイム**（`tiptap.react`） | 候補リストとピッカーの描画 | エディターの React ツリーにポータルで描画するので、公開されていない `react-dom` が不要。 |
+| `ReactRenderer` | **ランタイム**（`tiptap.react`） | 候補リストとピッカーの描画 | エディターの React ツリーに描画する。その中で、デザインシステムの `Popover` が `body` へポータルで出す。 |
 | `frimousse` 0.4 | npm（同梱） | ピッカー UI | 依存は `react` と `react/jsx-runtime` だけ（ソースで確認済み）で、どちらも external にできる。スタイルなし・合成型の部品で、管理画面の見た目に合わせやすい。仮想スクロール・キーボード操作・`locale="ja"`・肌の色に対応。データの取得先を `emojibaseUrl` で変えられる。 |
 | `emojibase-data` | npm（**JS には含めず静的ファイルとしてコピー**） | ピッカーとサジェストの辞書 | frimousse が使うデータそのもの。`ja/data.json`（日本語の名前・タグ）、`ja/messages.json`（カテゴリ名）、`en/shortcodes/github.json`（`:smile` 形式）を `src/assets/emojibase/` にコピーする。frimousse の既定は jsDelivr の CDN から取得するが、管理画面から外部 CDN に依存しないよう自前で配信する。 |
-| `@floating-ui/dom` | npm（同梱、約 6KB） | ポップアップの位置合わせ | ホストの block-editor も使っているが公開されていないので同梱する。状態を持たない純粋関数なので二重化しても問題ない。 |
+| `@floating-ui/react` | npm（`@ablogcms/components` 経由で同梱） | ポップアップの位置合わせ | Popover の内部で使われる。同梱するのは `react-dom` を代用品にしたうえでの話（6 章）。 |
 | `emoji-mart` | — | — | 【不採用】：Web Components ベースで重く、`@emoji-mart/react` の peer が React 18 までで止まっている（2023 年以降更新なし）。 |
 
 ### 4.4 構成
@@ -556,7 +545,7 @@ import { EmojiPicker as P } from 'frimousse';
 export function EmojiPicker({ emojibaseUrl, onSelect, onClose }: Props) {
   return (
     <P.Root
-      className="acms-emoji-picker"
+      className="acms-admin-emoji-picker"
       locale="ja"
       emojibaseUrl={emojibaseUrl}
       columns={9}
@@ -617,41 +606,25 @@ export function searchEmoji(data: EmojiEntry[], query: string, limit: number): E
 - [ ] 保存した HTML に絵文字が文字として入っていて、余計な要素が無い。
 - [ ] オフラインや 404 で辞書の取得に失敗しても、エディターは動き続ける（ピッカーにエラーを表示し、次に開いたとき再取得する）。
 - [ ] vitest：`searchEmoji`（ひらがな／カタカナ、ショートコード、並び順）と `recent.ts`。
-- [ ] バンドルに react / tiptap / prosemirror の実装が含まれず、絵文字データも含まれていない（JS は 60KB 未満が目安）。
+- [ ] バンドルに react / tiptap / prosemirror の実装が含まれず、絵文字データも含まれていない（JS は 100KB 未満が目安）。
 
-## 5. 実装タスク
+## 5. 確認事項・リスク
 
-リポジトリの作成とバックエンドへの submodule 追加は、事前準備として済ませておく（手順書（バックエンドの `docs/block-editor-plugins/runbook.html`。手元で見る用でコミットしない） の「事前準備」）。実装セッションへのプロンプトと、レビュー・修正・朝の確認までの流れも 手順書（バックエンドの `docs/block-editor-plugins/runbook.html`。手元で見る用でコミットしない） にまとめてある。
-
-| # | タスク | 参照 |
-|---|---|---|
-| 0 | 前提確認：アセット API で登録した JS / CSS がエントリー編集画面で出力され、`ACMS.plugins.register` と `ACMS.Library.React` が使えること（空の `setup` で `console.log`） | 6 章 U-1・U-2 |
-| 1 | スケルトンの整理（不要ファイルの削除・ポート設定）と、JS ビルド一式の追加・絵文字データのコピー | 3.3・3.4・4.5 (6) |
-| 2 | PHP：`ServiceProvider`・`Hook`・`Services/AssetRegistrar` と PHPUnit の単体テスト | 3.5 |
-| 3 | 辞書の読み込みと検索（純粋関数） | 4.5 (5) |
-| 4 | 拡張本体（Suggestion・コマンド・ツールバーのボタン・ショートカット） | 4.5 (1)(2) |
-| 5 | UI：SuggestionList / EmojiPicker / popup / 最近使った絵文字、CSS | 4.5 (3)(4) |
-| 6 | CI に frontend ジョブを追加 | 3.6 |
-| 7 | テスト（vitest：純粋関数＋ビルド成果物の読み込みテスト）と実機での受け入れ確認（日本語 IME を含む） | 3.1・4.6 |
-| 8 | README（インストール手順・コア更新時の確認事項） | — |
-
-## 6. 未確認事項・リスク
-
-設計時点で、型定義とコアのソースからは確定できなかった点。**実装の最初に実機で確認**する。
+設計時点で、型定義とコアのソースからは確定できなかった点と、その結果（結果は 6 章）。
 
 | # | 項目 | 確認方法 / 代替案 |
 |---|---|---|
-| U-1 | `Hook::afterBuild()` での管理画面の判定（`ADMIN` 定数）が、ブロックエディターの出るすべての画面（管理画面のエントリー編集、公開側テーマ上のエントリー編集・ダイレクト編集、ユニットとしてのブロックエディター）で真になるか。公開側のページで読み込まれないか | 各画面でページのソースを見て `index.js` の有無を確認する。判定が合わなければ条件を調整する（例：`ADMIN` の値で絞る、ログインユーザーの権限で絞る）。 |
-| U-2 | `type="module"` のスクリプトで、`register()` の時点に `ACMS.plugins`・`ACMS.Library.React` が存在するか（アセット API のドキュメントでは実行順が保証されている） | コンソールで確認する。存在しない場合は `ACMS.Ready(() => register(…))` で登録する（IIFE は読み込み時に `ACMS.Library.React` を束縛するので特に注意）。 |
-| U-3 | `ctx.config` に値を渡す PHP 側の方法（`jsModule()` が配列を渡せるか、`ACMS.Config` のどこに入るか） | 渡せなければ既定値（`ACMS.Config.root` から組み立てた URL）で動かす。設計はどちらでも動くようにしてある。 |
-| U-4 | `Suggestion` の `allowedPrefixes` で行頭が許可されるか。全角コロンの場合の IME 確定後の挙動 | 動かなければ `findSuggestionMatch` を自前で渡す。 |
-| U-5 | `Mod-Alt-e` がブラウザ・OS・コアのショートカットと衝突しないか | 衝突すれば `Mod-Shift-;` などに変える。 |
-| U-6 | frimousse 0.4 の正確な API 名と、`emojibaseUrl` で必要になるファイル（`data.json`・`messages.json` 以外に要るものがあるか） | 型定義とネットワークタブで確認する。 |
+| U-1 | 【確認済み】 `Hook::afterBuild()` での管理画面の判定（`ADMIN` 定数）が、ブロックエディターの出るすべての画面（管理画面のエントリー編集、公開側テーマ上のエントリー編集・ダイレクト編集、ユニットとしてのブロックエディター）で真になるか。公開側のページで読み込まれないか | 各画面でページのソースを見て `index.js` の有無を確認する。判定が合わなければ条件を調整する（例：`ADMIN` の値で絞る、ログインユーザーの権限で絞る）。 |
+| U-2 | 【要対応だった。6 章 (1)】 `type="module"` のスクリプトで、`register()` の時点に `ACMS.plugins`・`ACMS.Library.React` が存在するか（アセット API のドキュメントでは実行順が保証されている） | コンソールで確認する。存在しない場合は `ACMS.Ready(() => register(…))` で登録する（IIFE は読み込み時に `ACMS.Library.React` を束縛するので特に注意）。 |
+| U-3 | 【既定値で動かしている】 `ctx.config` に値を渡す PHP 側の方法（`jsModule()` が配列を渡せるか、`ACMS.Config` のどこに入るか） | 渡せなければ既定値（`ACMS.Config.root` から組み立てた URL）で動かす。設計はどちらでも動くようにしてある。 |
+| U-4 | 【6 章 (3) のとおり調整】 `Suggestion` の `allowedPrefixes` で行頭が許可されるか。全角コロンの場合の IME 確定後の挙動 | 動かなければ `findSuggestionMatch` を自前で渡す。 |
+| U-5 | 【確認済み】 `Mod-Alt-e` がブラウザ・OS・コアのショートカットと衝突しないか | 衝突すれば `Mod-Shift-;` などに変える。 |
+| U-6 | 【確認済み】 frimousse 0.4 の正確な API 名と、`emojibaseUrl` で必要になるファイル（`data.json`・`messages.json` 以外に要るものがあるか） | 型定義とネットワークタブで確認する。 |
 | R-1 | コア更新で `blockMenu` や `Suggestion` の仕様が変わる | `@ablogcms/*` をコアと同じ版に固定し、コアのアップデート後に受け入れ条件を再確認する（README に記載）。 |
 
 根拠：`@ablogcms/plugins`・`block-editor`・`events`・`i18n`・`types`・`components` 3.2.37 の `.d.ts` と `dist`、ローカルのコア `ablogcms/js/src/admin.js`・`features/block-editor/{tiptap-global,block-definitions}.ts`、`themes/system/_layouts/admin.html`、`frimousse@0.4.0` の dist。
 
-## 付録：UI パターン（ui-mock.html の要約）
+## 付録：UI パターン
 
 保存形式はどのパターンでも同じ（Unicode の文字として挿入）。
 
@@ -676,3 +649,51 @@ export function searchEmoji(data: EmojiEntry[], query: string, limit: number): E
 |---|---|---|---|
 | **P1【推奨】** | フルピッカー（検索・カテゴリ・肌の色・最近使った） | どの絵文字でも探せる。frimousse の部品をそのまま使える | 大きく、よく使う 1 つを入れるだけでも視線移動が多い |
 | P2 | クイックパレット（最近 8 ＋ よく使う 8）→「すべて表示」でフル | よく使う絵文字なら 1 クリック。本文を隠さない | 無いときは 1 クリック増える。画面が 2 種類になり作る量が増える |
+
+## 6. 実装で確認したこと・設計から変えた点
+
+実装時に、実機（a-blog cms 3.2、ローカルの管理画面）と自動テストで確かめた結果。
+
+### 確認事項の結果（5 章の U-1〜U-6）
+
+| # | 結果 |
+|---|---|
+| U-1 | エントリー編集画面（`ADMIN` = `entry_editor`）と一覧などの管理画面で `index.js` / `index.css` が出力される。公開側（`ADMIN` が空）では登録しない（`AssetRegistrar::shouldRegister()`）。公開側テーマ上のダイレクト編集・ユニットとしてのブロックエディターは `ADMIN` が空なので**対象外**（読み込まれない）。必要になったら条件を足す。 |
+| U-2 | **そのままでは不安定**。管理画面の JS（`/js/dest/admin.js`）は `async` で読み込まれるため、`type="module"` のプラグインが先に実行されて `ACMS.plugins` / `ACMS.Library.React` が無いことがある（ドキュメントの「実行順が保証される」は当てにならない）。IIFE は externals を読み込み時に束縛するので `Cannot read properties of undefined (reading 'React')` で落ちる。対策は 6 章「設計から変えた点」の 1。 |
+| U-3 | PHP から値は渡していない。`ctx.config.assetsUrl` があればそれを、無ければ `ACMS.Config.root` から組み立てた URL を使う（`frontend/plugin.ts` の `resolveAssetsUrl`）。 |
+| U-4 | 行頭・全角コロンとも動く。ただし `allowedPrefixes` に `' '` などを並べると日本語の直後（`今日は：ねこ`）で出ないため、`allowedPrefixes: null` にして、直前の文字は `allow`（`frontend/position.ts` の `isAllowedPosition`）で判定する。 |
+| U-5 | `Mod-Alt-e`（Mac は ⌘⌥E）で開く。コアが登録しているショートカット（`Mod-E` など）とは衝突しない。ショートカット一覧にも `block-editor` カテゴリで登録した。 |
+| U-6 | frimousse は `${emojibaseUrl}/ja/data.json` と `messages.json` を取得し、`data.json` には ETag 確認の HEAD も飛ばす。それ以外のファイルは要らない。 |
+
+### 設計から変えた点
+
+1. **IIFE の実行を `ACMS.adminReady` まで遅らせる**（vite.config.ts の `BOOT_BANNER` / `BOOT_FOOTER`）。出力全体を関数で包み、コアが公開している `ACMS.adminReady(listener)`（`acms.js` が同期で定義。`admin.js` の初期化後に発火し、発火済みなら即時に実行される）で実行する。`ACMS.Ready` は `index.js` の読み込み完了で発火し `admin.js` を待たないので、`ACMS.plugins` がまだ無いことがあり使えない。管理画面以外（`adminReady` が発火しない）や `ACMS` が無いページでは何も実行しない。`register()` の例外は握りつぶして `console.error` に出す。エディター本体（遅延チャンク）の読み込みは `adminReady` の後なので、ファクトリの登録は間に合う。ビルド成果物の読み込みテスト（`tests/js/bundle-load.test.ts`）で、先に実行された場合・発火後に実行された場合・管理画面以外を検証している。
+2. **`process.env.NODE_ENV` を `define` で固定**。ライブラリモードは置換しないため、frimousse の `process.env.NODE_ENV` がそのまま残り、ブラウザで `ReferenceError` になる。テストで `process.` が残っていないことを検査している。
+3. **サジェストの位置判定を `allow` に集約**（上記 U-4）。コードブロック・インラインコード・直前が英数字（全角含む）のとき出さない。
+4. **サジェストは IME の変換中も表示する**。Suggestion は変換中のテキストにも反応するため、「確定後に出す」とはせず、変換中のキー操作（`isComposing` / `keyCode 229`）を無視することで、確定の Enter で絵文字が入らないようにした。実機の日本語 IME での確認は未了。
+5. **検索順位**：ショートコードの完全一致を最優先にした（`:smile` で 😄 が 😃 より上）。順は 完全一致 > ショートコード前方一致 > 名前前方一致 > タグ前方一致 > 部分一致。
+6. **ピッカーの日本語検索**：frimousse の検索はひらがなとカタカナを区別する（「ねこ」で「ネコ」が出ない）ため、`resolveEmojiData` で名前とタグのひらがな・カタカナ表記をタグに足す（`augmentPickerData`。表示は変えない）。
+7. **ピッカーの読み込み失敗**：frimousse は失敗を `console.error` に出すだけで画面に何も出さない。そこで `defaultEmojiDataResolver` を包んで失敗を検知し、エラーと「再試行」ボタンを表示する。失敗したらリゾルバーの関数を作り直す（frimousse はリゾルバーごとに結果を覚えるため）ので、次に開いたとき再取得される。
+8. **ポップアップは管理画面のデザインシステムの `Popover`**（`@ablogcms/components/popover`）で出す（`frontend/PopupShell.tsx`）。位置合わせ（`getAnchorRect` の仮想要素でカーソル位置を指す）、はみ出し防止、外側クリック、z-index（`.acms-admin-popover`）、見た目はそちらに任せる。`size` ミドルウェアで高さを抑える。フォーカスは Popover に任せず（FloatingFocusManager は位置が決まる前にフォーカスしてページが先頭へスクロールするため無効化）、ピッカーが自分で検索欄へ `preventScroll` 付きでフォーカスする（frimousse の `autoFocus` も同じ理由で使わない）。エラー表示は `Alert` と `ButtonV2`（`outlined`）。
+9. **コードブロック内**では、ツールバーの絵文字ボタンは無効、`insertEmoji` / `openEmojiPicker` は何もしない。
+10. **PHP**：`Hook` は `ADMIN` / `DIR_OFFSET` を `protected` メソッド経由で読む（定数は再定義できずテストできないため）。PHPUnit のカバレッジは、コア側のオートローダーがマウント先 `/var/www/html/extension/plugins/BlockEditorEmoji` から読み込むため、`phpunit.coverage.xml.dist` を別に用意し `composer coverage` で測る。Docker のイメージは `3.2-php8.4`、ポートは `.env` の `ACMS_PORT`（18082）。
+11. **リポジトリ構成**：`frontend/plugin.ts`（`setup` と URL 解決）と `frontend/position.ts` を追加し、`index.ts` は `register` だけにした（テストしやすくするため）。テストは `tests/js/` に置き、Tiptap の実物（`@tiptap/core` など）を渡した本物のエディターで統合テストしている。
+12. **選択範囲があるとき**は、その範囲を絵文字で置き換える（OS 標準のピッカーと同じ）。ピッカーを開く前の `from`〜`to` を保存して `insertContentAt` する。
+13. **候補の取得中（Tiptap 3.31 以降の `loading`）**は前の表示を保つ。毎回リストを作り直すと、入力のたびにちらつき、選択位置も戻ってしまう。
+14. **Enter / Tab は修飾キーなしのときだけ**確定に使う（Shift+Enter の改行などは奪わない）。
+15. **IIFE のラッパー**は `register()` の例外を握りつぶして `console.error` に出す（`adminReady` の通知を止めないため）。
+16. **ポップアップの破棄はエディター単位**：エディターを破棄したとき、そのエディターのポップアップだけ閉じる（`closeActivePopup(editor)`）。
+17. **ツールチップのショートカット表示**は Mac では ⌘⌥E、それ以外では Ctrl+Alt+E。ショートカット一覧のラベルは `setup()` の時点では翻訳が使えないため日本語固定（英語 UI でも日本語。要判断）。
+18. **ビルド済みの JS を Git に含めない**（設計書の初版では含める想定だった）。`src/assets/` は `.gitignore` し、`release.yml` がタグ時にビルドして zip にだけ含める。`test.yml` の `git diff --exit-code src/assets` は無くした。
+19. **CSS のクラス名**は管理画面用の接頭辞 `acms-admin-` に合わせて `acms-admin-emoji-*`（ポップアップは `acms-admin-emoji-popup`）にした。
+20. **絵文字を保存できる DB のときだけ有効にする**。コアのライトエディターの絵文字ピッカーと同じ条件で、`ACMS.Config.dbCharset`（`config.server.php` の `DB_CONNECTION_CHARSET`）が `utf8mb4` のときだけ拡張を登録する。そうでないと、保存した絵文字が `?` などに化ける。満たさないときは `console.info` を出して何も登録しない（`frontend/plugin.ts` の `canStoreEmoji`）。コアのライトエディターは加えて `LiteEditorUseEmojiPicker` の設定とモバイルかどうかも見ているが、前者はライトエディター用の設定なので見ていない。後者は、サジェストが OS の絵文字キーボードの邪魔にならないため見ていない。
+21. **設定画面（オン／オフ）**を追加した。拡張アプリの一覧の「設定」から開く Twig 製のページ（`src/template/admin/main.twig`）で、ブログごとに `block_editor_emoji_enabled`（`on` が既定、`off`）を標準の `ACMS_POST_Config` で保存する。`off` のとき `Hook::afterBuild()` が JS / CSS を登録しない。DB の接続文字コードが `utf8mb4` でないときは、画面に警告を出す。
+22. **最低バージョンは a-blog cms 3.2.36**（動作条件）。`@ablogcms/plugins` / `block-editor` の各リリースを調べ、依存している機能（`ctx.keyboardShortcuts.registerShortcut`、`ctx.i18n.addResources`、ブロックエディターの `blockMenu` 拡張点）が揃う最初のバージョンが 3.2.36 だった（3.2.35 以前は `registerShortcut`・`addResources`・`BlockMenuButtonItem` が無い）。`Services/Requirements`（`ServiceProvider::checkRequirements()`）が、インストール時に `VERSION` が 3.2.36 以上であることを確認する。型は 3.2.37 に固定してビルドする。
+23. **`react-dom` の代用品**：ホストは `react-dom` を公開していない。`@ablogcms/components` の Popover（`@floating-ui/react`）と、`@ablogcms/react-hooks` 経由で巻き込まれる `@ablogcms/react-utils`（`react-dom/client` を import している）のために、vite の alias（`vite.config.ts`、vitest も同じ設定）で `frontend/shims/react-dom.ts` に差し替える。`createPortal`（React のポータル要素を作るだけ。描画はホストの React DOM）と `flushSync`（即時実行）を持ち、`createRoot` / `hydrateRoot` は呼ぶと例外を投げる。`react-dom` 本体（約 130KB）を同梱して React DOM を二重にするより小さく安全。バンドルは約 91KB になった（目安を 100KB 未満に変更）。
+24. **PHP の対応バージョンは 8.1〜8.5**。CI の phpunit はこの範囲（`php: ['8.1' … '8.5']`）で回し、phpcs（PHPCompatibility）と PHPStan も 8.1〜8.5 を対象にしている。8.6 以降は未検証で、README にもその旨を書いた。
+25. **CI**：`frontend` ジョブで `npm run coverage`（vitest のカバレッジ）も実行する。
+
+### テストとカバレッジ
+
+- フロントエンド：vitest（jsdom）。純粋関数、React コンポーネント、本物の Tiptap エディターを使った統合テスト、ビルド成果物の読み込みテスト。`npm run coverage` で行カバレッジ 98% 超。
+- バックエンド：PHPUnit（`AssetRegistrar`・`Hook`・`ServiceProvider`）。`composer coverage` で 100%。

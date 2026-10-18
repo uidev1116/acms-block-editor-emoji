@@ -1,0 +1,187 @@
+/* ポップアップ（候補リスト・ピッカー）。管理画面の配色（--acms-*）があればそれに合わせる */
+.acms-admin-emoji-popup {
+  --emoji-fg: #333;
+  --emoji-border: var(--acms-admin-color-border, #d5d8dc);
+  --emoji-hover: #f1f1f1; /* 管理画面のメニュー項目の選択・ホバーと同じ */
+  font-size: 14px;
+  color: var(--emoji-fg);
+}
+
+/* 枠・背景・影・z-index は管理画面の Popover（.acms-admin-popover）が持つ。ここでは寸法だけ決める */
+.acms-admin-emoji-popup--list {
+  --acms-admin-popover-min-width: 240px;
+  max-width: 360px;
+}
+
+.acms-admin-emoji-popup--picker {
+  --acms-admin-popover-padding-x: 0;
+  --acms-admin-popover-padding-y: 0;
+  width: 328px;
+}
+
+/* S1：縦リスト */
+.acms-admin-emoji-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.acms-admin-emoji-list__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.acms-admin-emoji-list__item[aria-selected='true'] {
+  background: var(--emoji-hover);
+}
+
+.acms-admin-emoji-list__emoji {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.acms-admin-emoji-list__label {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.acms-admin-emoji-list__code {
+  color: #4b5563;
+  font-size: 12px;
+}
+
+/* P1：フルピッカー（frimousse） */
+
+/*
+ * frimousse はカテゴリ見出し・行・絵文字の高さを、`--frimousse-*-height` の CSS 変数（実測値）で
+ * 指定する。padding を足すと content-box では見出しが実測より高くなり、先頭の行が見出しの下に
+ * 隠れて切れる。padding を含めた高さにそろえるため border-box にする。
+ */
+.acms-admin-emoji-picker [frimousse-category-header],
+.acms-admin-emoji-picker [frimousse-row],
+.acms-admin-emoji-picker [frimousse-emoji] {
+  box-sizing: border-box;
+}
+
+.acms-admin-emoji-picker {
+  --emoji-pad-x: 8px;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 380px;
+  max-height: var(--acms-admin-emoji-max-height, 380px);
+  isolation: isolate;
+}
+
+.acms-admin-emoji-picker--error {
+  height: auto;
+  padding: 12px;
+  gap: 8px;
+}
+
+.acms-admin-emoji-picker__search-wrap {
+  margin: var(--emoji-pad-x) var(--emoji-pad-x) 4px;
+}
+
+/* 見た目は管理画面標準の入力欄（acms-admin-form-control）。幅だけ決める */
+.acms-admin-emoji-picker__search {
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.acms-admin-emoji-picker__recent {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+  padding: 4px var(--emoji-pad-x);
+  border-bottom: 1px solid var(--emoji-border);
+}
+
+.acms-admin-emoji-picker__recent-item,
+.acms-admin-emoji-picker [frimousse-emoji] {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.acms-admin-emoji-picker__recent-item:hover,
+.acms-admin-emoji-picker [frimousse-emoji][data-active] {
+  background: var(--emoji-hover);
+}
+
+.acms-admin-emoji-picker__viewport {
+  position: relative;
+  flex: 1;
+  outline: none;
+}
+
+.acms-admin-emoji-picker [frimousse-list] {
+  user-select: none;
+  padding-bottom: 6px;
+}
+
+.acms-admin-emoji-picker [frimousse-category-header] {
+  /* 見出しの文字は、絵文字の字形の左端（ボタンの左端 + 6px）にそろえる */
+  padding: 8px calc(var(--emoji-pad-x) + 6px) 4px;
+  background: var(--acms-admin-popover-bg, #fff);
+  color: #4b5563;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* 左寄せ。絵文字のボタン（32px）の左端を、検索欄・最近使った行と同じ --emoji-pad-x にそろえる */
+.acms-admin-emoji-picker [frimousse-row] {
+  scroll-margin: 4px;
+  justify-content: flex-start;
+  padding: 0 var(--emoji-pad-x);
+}
+
+.acms-admin-emoji-picker__status {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #4b5563;
+}
+
+.acms-admin-emoji-picker__skin {
+  align-self: flex-end;
+  margin: 4px var(--emoji-pad-x) var(--emoji-pad-x);
+  padding: 2px 6px;
+  border: 1px solid var(--emoji-border);
+  border-radius: 6px;
+  background: transparent;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+/* スクリーンリーダー向けの通知（画面には出さない） */
+.acms-admin-emoji-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* 強制カラー（ハイコントラスト）では背景が消えるので、選択を枠で示す */
+@media (forced-colors: active) {
+  .acms-admin-emoji-list__item[aria-selected='true'] {
+    outline: 2px solid Highlight;
+  }
+}

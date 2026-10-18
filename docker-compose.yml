@@ -4,9 +4,9 @@
 # appleple/acms-dev runtime image and drop the core ZIP in manually (see the docs).
 services:
   acms:
-    image: appleple/acms:${ACMS_IMAGE_TAG:-3.2-php8.5}
+    image: appleple/acms:${ACMS_IMAGE_TAG:-3.2-php8.4}
     ports:
-      - '8080:80'
+      - '${ACMS_PORT:-8080}:80'
     environment:
       ACMS_DB_HOST: db
       ACMS_DB_NAME: acms

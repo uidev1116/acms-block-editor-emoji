@@ -1,0 +1,42 @@
+{
+  "name": "acms-block-editor-emoji",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "setup": "npm run build",
+    "dev": "vite build --watch --mode development",
+    "typecheck": "tsc --noEmit",
+    "build": "vite build && node scripts/copy-emojibase.mjs",
+    "test": "vitest run",
+    "coverage": "vitest run --coverage"
+  },
+  "dependencies": {
+    "@ablogcms/components": "3.2.37",
+    "@ablogcms/i18n": "3.2.37",
+    "@ablogcms/plugins": "3.2.37",
+    "@floating-ui/react": "0.27.20",
+    "frimousse": "^0.4.0"
+  },
+  "devDependencies": {
+    "@ablogcms/block-editor": "3.2.37",
+    "@ablogcms/types": "3.2.37",
+    "@testing-library/dom": "^10.4.2",
+    "@testing-library/react": "^16.3.3",
+    "@tiptap/core": "^3.32.0",
+    "@tiptap/pm": "^3.32.0",
+    "@tiptap/react": "^3.32.0",
+    "@tiptap/starter-kit": "^3.32.0",
+    "@tiptap/suggestion": "^3.32.0",
+    "@types/node": "^22.20.5",
+    "@types/react": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.2",
+    "@vitest/coverage-v8": "^5.0.5",
+    "emojibase-data": "^17.0.0",
+    "jsdom": "^29.1.1",
+    "react": "^19.3.1",
+    "typescript": "^5.9.3",
+    "vite": "^8.3.4",
+    "vitest": "^5.0.5"
+  }
+}
