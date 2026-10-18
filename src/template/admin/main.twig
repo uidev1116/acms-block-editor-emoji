@@ -32,7 +32,7 @@
 {% endif %}
 
 {% if not dbReady %}
-<div role="alert" class="acms-admin-alert acms-admin-alert-danger acms-admin-alert-icon">
+<div role="alert" class="acms-admin-alert acms-admin-alert-warning acms-admin-alert-icon">
   <span class="acms-admin-icon acms-admin-icon-attention acms-admin-alert-icon-before" aria-hidden="true"></span>
   DB の接続文字コードが <strong>{{ charset ?: 'utf8（utf8mb3）' }}</strong> のため、絵文字などの4バイト文字を保存すると壊れます。
   このままでは、設定がオンでもブロックエディターの絵文字の入力は無効のままです。
