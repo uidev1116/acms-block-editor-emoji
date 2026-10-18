@@ -20,6 +20,21 @@ updates:
   - package-ecosystem: 'npm'
     directory: '/'
     ignore:
+      # typescript-eslint supports TypeScript < 6.1 only. Revisit when it supports 6.1+ / 7.
+      - dependency-name: 'typescript'
+        versions: ['>=6.1.0']
+    schedule:
+      interval: 'weekly'
+    groups:
+      github-actions:
+        patterns:
+          - '*'
+        update-types:
+          - 'minor'
+          - 'patch'
+  - package-ecosystem: 'npm'
+    directory: '/'
+    ignore:
       # typescript-eslint supports TypeScript < 6.1 only. Revisit when it supports 7.
       - dependency-name: 'typescript'
         update-types: ['version-update:semver-major']
