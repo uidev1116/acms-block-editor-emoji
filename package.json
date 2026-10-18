@@ -9,7 +9,12 @@
     "typecheck": "tsc --noEmit",
     "build": "vite build && node scripts/copy-emojibase.mjs",
     "test": "vitest run",
-    "coverage": "vitest run --coverage"
+    "coverage": "vitest run --coverage",
+    "prepare": "husky",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "dependencies": {
     "@ablogcms/components": "3.2.37",
@@ -21,6 +26,7 @@
   "devDependencies": {
     "@ablogcms/block-editor": "3.2.37",
     "@ablogcms/types": "3.2.37",
+    "@eslint/js": "^10.0.1",
     "@testing-library/dom": "^10.4.2",
     "@testing-library/react": "^16.3.3",
     "@tiptap/core": "^3.32.0",
@@ -33,10 +39,25 @@
     "@vitejs/plugin-react": "^6.1.2",
     "@vitest/coverage-v8": "^5.0.5",
     "emojibase-data": "^17.0.0",
+    "eslint": "^10.13.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.13.0",
+    "husky": "^9.1.7",
     "jsdom": "^30.1.3",
+    "lint-staged": "^16.4.0",
+    "prettier": "^3.9.10",
     "react": "^19.3.1",
-    "typescript": "^7.0.2",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "^8.71.2",
     "vite": "^8.3.4",
     "vitest": "^5.0.5"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{js,mjs,json,css,yml,yaml}": "prettier --write"
   }
 }

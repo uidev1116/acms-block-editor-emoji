@@ -1,0 +1,10 @@
+src/assets/
+coverage/
+build/
+vendor/
+node_modules/
+package-lock.json
+composer.lock
+docs/
+composer.json
+*.md
