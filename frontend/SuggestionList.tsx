@@ -73,29 +73,29 @@ export const SuggestionList = forwardRef<SuggestionListHandle, Props>(function S
 
   return (
     <>
-    <ul id={listId} className="acms-admin-emoji-list" role="listbox" aria-label={t('block-editor-emoji:suggestions')}>
-      {items.map((item, index) => (
-        <li
-          key={item.emoji}
-          id={optionId(index)}
-          role="option"
-          aria-selected={index === active}
-          className="acms-admin-emoji-list__item"
-          onMouseDown={(e) => e.preventDefault()}
-          onMouseEnter={() => setSelected(index)}
-          onClick={() => command({ emoji: item.emoji })}
-        >
-          <span className="acms-admin-emoji-list__emoji" aria-hidden="true">
-            {item.emoji}
-          </span>
-          <span className="acms-admin-emoji-list__label">{item.label}</span>
-          {item.shortcodes[0] && <span className="acms-admin-emoji-list__code">:{item.shortcodes[0]}:</span>}
-        </li>
-      ))}
-    </ul>
-    <span role="status" className="acms-admin-emoji-visually-hidden">
-      {t('block-editor-emoji:suggestionCount', { count: items.length })}
-    </span>
+      <ul id={listId} className="acms-admin-emoji-list" role="listbox" aria-label={t('block-editor-emoji:suggestions')}>
+        {items.map((item, index) => (
+          <li
+            key={item.emoji}
+            id={optionId(index)}
+            role="option"
+            aria-selected={index === active}
+            className="acms-admin-emoji-list__item"
+            onMouseDown={(e) => e.preventDefault()}
+            onMouseEnter={() => setSelected(index)}
+            onClick={() => command({ emoji: item.emoji })}
+          >
+            <span className="acms-admin-emoji-list__emoji" aria-hidden="true">
+              {item.emoji}
+            </span>
+            <span className="acms-admin-emoji-list__label">{item.label}</span>
+            {item.shortcodes[0] && <span className="acms-admin-emoji-list__code">:{item.shortcodes[0]}:</span>}
+          </li>
+        ))}
+      </ul>
+      <span role="status" className="acms-admin-emoji-visually-hidden">
+        {t('block-editor-emoji:suggestionCount', { count: items.length })}
+      </span>
     </>
   );
 });

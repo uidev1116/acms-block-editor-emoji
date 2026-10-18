@@ -32,11 +32,16 @@ describe('依存の宣言', () => {
     }
     return [...found];
   }
-  const packageName = (spec: string) => (spec.startsWith('@') ? spec.split('/').slice(0, 2).join('/') : spec.split('/')[0]);
+  const packageName = (spec: string) =>
+    spec.startsWith('@') ? spec.split('/').slice(0, 2).join('/') : spec.split('/')[0];
 
   it('frontend/ が import するパッケージは dependencies / devDependencies にある', () => {
     const declared = new Set([...Object.keys(pkg.dependencies), ...Object.keys(pkg.devDependencies)]);
-    expect(specifiers().map(packageName).filter((n) => !declared.has(n))).toEqual([]);
+    expect(
+      specifiers()
+        .map(packageName)
+        .filter((n) => !declared.has(n)),
+    ).toEqual([]);
   });
 
   it('バンドルに同梱される（ホストが公開しない）パッケージは dependencies にある', () => {

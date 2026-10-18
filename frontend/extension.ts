@@ -119,8 +119,7 @@ export function createSuggestionRender(tiptap: Tiptap) {
   let popup: PopupHandle<
     { items: EmojiEntry[]; command: SuggestionRenderProps['command']; onActive: (active: ActiveOption | null) => void },
     SuggestionListHandle
-  > | null =
-    null;
+  > | null = null;
   let current: SuggestionRenderProps | null = null;
 
   const close = () => {

@@ -21,7 +21,10 @@ function mount(content = '<p></p>') {
   return mounted.editor;
 }
 
-const flush = () => act(async () => { await new Promise((r) => setTimeout(r, 20)); });
+const flush = () =>
+  act(async () => {
+    await new Promise((r) => setTimeout(r, 20));
+  });
 
 /** 末尾に文字を打ち込む（ProseMirror のトランザクション経由） */
 async function type(editor: ReturnType<typeof mount>, text: string) {
@@ -45,7 +48,10 @@ function press(editor: ReturnType<typeof mount>, key: string, init: KeyboardEven
 beforeEach(() => {
   localStorage.clear();
   resetEmojiDataCache();
-  vi.stubGlobal('fetch', vi.fn(async (u: string) => ok(u.endsWith('github.json') ? github : raw)));
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (u: string) => ok(u.endsWith('github.json') ? github : raw)),
+  );
 });
 afterEach(() => {
   closeActivePopup();
@@ -153,7 +159,12 @@ describe('サジェスト', () => {
   });
 
   it('辞書の取得に失敗してもエディターは動き続ける', async () => {
-    vi.stubGlobal('fetch', vi.fn(async () => { throw new TypeError('offline'); }));
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => {
+        throw new TypeError('offline');
+      }),
+    );
     const editor = mount();
     await type(editor, ':smile');
     expect(list()).toBeNull();
@@ -208,7 +219,9 @@ describe('コマンドとショートカット', () => {
 
     // 選択を動かしても、保存した範囲に入る
     editor.commands.setTextSelection(3);
-    const props = (document.querySelector('.acms-admin-emoji-popup') as HTMLElement).querySelector('.acms-admin-emoji-picker__recent');
+    const props = (document.querySelector('.acms-admin-emoji-popup') as HTMLElement).querySelector(
+      '.acms-admin-emoji-picker__recent',
+    );
     expect(props).toBeNull();
   });
 
@@ -223,8 +236,15 @@ describe('コマンドとショートカット', () => {
   });
 
   it('フォーカスがピッカーの外へ出たらピッカーを閉じる', async () => {
-    const messages = { groups: [{ key: 'smileys-emotion', message: 'スマイリー', order: 0 }], subgroups: [], skinTones: [] };
-    vi.stubGlobal('fetch', vi.fn(async (u: string) => ok(u.endsWith('messages.json') ? messages : raw)));
+    const messages = {
+      groups: [{ key: 'smileys-emotion', message: 'スマイリー', order: 0 }],
+      subgroups: [],
+      skinTones: [],
+    };
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (u: string) => ok(u.endsWith('messages.json') ? messages : raw)),
+    );
     const editor = mount();
     press(editor, 'e', { key: 'e', ctrlKey: true, altKey: true });
     await flush();
@@ -286,7 +306,16 @@ describe('候補の更新', () => {
     const editor = mount();
     const render = createSuggestionRender(tiptap);
     const base = { editor, command: () => {}, clientRect: () => new DOMRect(0, 0, 0, 0) };
-    const entry = { emoji: '😄', label: 'x', tags: [], shortcodes: [], order: 0, normLabel: 'x', normTags: [], normCodes: [] };
+    const entry = {
+      emoji: '😄',
+      label: 'x',
+      tags: [],
+      shortcodes: [],
+      order: 0,
+      normLabel: 'x',
+      normTags: [],
+      normCodes: [],
+    };
     await act(async () => render.onStart({ ...base, items: [entry] }));
     const popup = document.querySelector('.acms-admin-emoji-popup');
     await act(async () => render.onUpdate({ ...base, items: [], loading: true }));

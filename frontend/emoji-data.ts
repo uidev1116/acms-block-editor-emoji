@@ -91,11 +91,7 @@ function score(entry: EmojiEntry, q: string): number | null {
   if (codes.some((c) => c.startsWith(q))) return 1;
   if (entry.normLabel.startsWith(q)) return 2;
   if (entry.normTags.some((t) => t.startsWith(q))) return 3;
-  if (
-    entry.normLabel.includes(q) ||
-    entry.normTags.some((t) => t.includes(q)) ||
-    codes.some((c) => c.includes(q))
-  ) {
+  if (entry.normLabel.includes(q) || entry.normTags.some((t) => t.includes(q)) || codes.some((c) => c.includes(q))) {
     return 4;
   }
   return null;
@@ -114,8 +110,10 @@ export function searchEmoji(data: EmojiEntry[], query: string, limit: number): E
   return hits.slice(0, limit).map((h) => h.entry);
 }
 
-const toKatakana = (text: string) => text.replace(/[\u3041-\u3096]/g, (c) => String.fromCharCode(c.charCodeAt(0) + 0x60));
-const toHiragana = (text: string) => text.replace(/[\u30A1-\u30F6]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0x60));
+const toKatakana = (text: string) =>
+  text.replace(/[\u3041-\u3096]/g, (c) => String.fromCharCode(c.charCodeAt(0) + 0x60));
+const toHiragana = (text: string) =>
+  text.replace(/[\u30A1-\u30F6]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0x60));
 
 interface PickerEmoji {
   label: string;

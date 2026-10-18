@@ -4,7 +4,16 @@ import { EmojiPicker } from '../../frontend/EmojiPicker';
 import { pushRecent } from '../../frontend/recent';
 
 const data = [
-  { label: 'にっこり笑う', hexcode: '1F604', emoji: '😄', tags: ['かお'], order: 1, group: 0, subgroup: 1, version: 0.6 },
+  {
+    label: 'にっこり笑う',
+    hexcode: '1F604',
+    emoji: '😄',
+    tags: ['かお'],
+    order: 1,
+    group: 0,
+    subgroup: 1,
+    version: 0.6,
+  },
   { label: 'ねこ', hexcode: '1F408', emoji: '🐈', tags: ['どうぶつ'], order: 2, group: 3, subgroup: 1, version: 0.7 },
 ];
 const messages = {

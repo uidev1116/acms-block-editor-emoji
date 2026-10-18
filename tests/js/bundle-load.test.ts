@@ -88,7 +88,11 @@ describe('ビルド成果物', () => {
 
   it('register が例外を投げても、adminReady の通知側には伝えない', () => {
     const { acms, fireAdminReady } = fakeAcms();
-    acms.plugins = { register: () => { throw new Error('boom'); } };
+    acms.plugins = {
+      register: () => {
+        throw new Error('boom');
+      },
+    };
     vi.spyOn(console, 'error').mockImplementation(() => {});
     run(acms);
     expect(() => fireAdminReady()).not.toThrow();

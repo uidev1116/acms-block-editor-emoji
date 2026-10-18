@@ -4,7 +4,8 @@ export const MAX_RECENT = 24;
 const MAX_LENGTH = 32;
 
 /** localStorage は書き換えられうるので、絵文字として妥当なものだけを使う */
-const isEmojiLike = (v: unknown): v is string => typeof v === 'string' && v.length > 0 && v.length <= MAX_LENGTH && !/[<>&]/.test(v);
+const isEmojiLike = (v: unknown): v is string =>
+  typeof v === 'string' && v.length > 0 && v.length <= MAX_LENGTH && !/[<>&]/.test(v);
 
 export function getRecent(): string[] {
   try {

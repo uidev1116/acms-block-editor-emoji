@@ -16,8 +16,7 @@ const entry = (emoji: string, label: string, shortcodes: string[] = []): EmojiEn
 });
 const items = [entry('😄', 'にっこり笑う', ['smile']), entry('🐈', 'ねこ', ['cat2']), entry('🐱', '猫の顔')];
 
-const key = (k: string, extra: Partial<KeyboardEventInit> = {}) =>
-  new KeyboardEvent('keydown', { key: k, ...extra });
+const key = (k: string, extra: Partial<KeyboardEventInit> = {}) => new KeyboardEvent('keydown', { key: k, ...extra });
 
 function setup(list = items) {
   const command = vi.fn();

@@ -139,7 +139,8 @@ describe('loadEmojiData', () => {
     const fetchMock = vi.fn(async () => ({ ok: false, status: 404, json: async () => ({}) }));
     vi.stubGlobal('fetch', fetchMock);
     await expect(loadEmojiData('/emojibase')).rejects.toThrow(/404/);
-    fetchMock.mockImplementation((async (url: string) => (url.endsWith('github.json') ? ok(github) : ok(raw))) as never);
+    fetchMock.mockImplementation((async (url: string) =>
+      url.endsWith('github.json') ? ok(github) : ok(raw)) as never);
     await expect(loadEmojiData('/emojibase')).resolves.toHaveLength(5);
   });
 
@@ -166,7 +167,9 @@ describe('augmentPickerData（ピッカーの検索用）', () => {
   it('名前とタグのひらがな・カタカナ表記をタグに足す（frimousse の検索は表記を区別するため）', () => {
     const out = augmentPickerData(base) as { emojis: { label: string; tags: string[] }[] };
     expect(out.emojis[0].label).toBe('ネコ'); // 表示は変えない
-    expect(out.emojis[0].tags).toEqual(expect.arrayContaining(['ねこ', 'ネコ', 'どうぶつ', 'ドウブツ', 'ぺっと', 'ペット']));
+    expect(out.emojis[0].tags).toEqual(
+      expect.arrayContaining(['ねこ', 'ネコ', 'どうぶつ', 'ドウブツ', 'ぺっと', 'ペット']),
+    );
     expect(out.emojis[1].tags).toEqual(expect.arrayContaining(['にっこり笑う', 'ニッコリ笑ウ']));
   });
 

@@ -93,7 +93,11 @@ export function EmojiPicker({ emojibaseUrl, onSelect, onClose, onDismiss }: Emoj
 
   if (failed) {
     return (
-      <div ref={errorRef} className="acms-admin-emoji-picker acms-admin-emoji-picker--error" onKeyDown={(e) => closeOnEscape(e, onClose)}>
+      <div
+        ref={errorRef}
+        className="acms-admin-emoji-picker acms-admin-emoji-picker--error"
+        onKeyDown={(e) => closeOnEscape(e, onClose)}
+      >
         <Alert variant="danger">{t('block-editor-emoji:loadError')}</Alert>
         <ButtonV2
           variant="outlined"
