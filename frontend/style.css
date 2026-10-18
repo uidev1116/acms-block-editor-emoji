@@ -17,7 +17,7 @@
 .acms-admin-emoji-popup--picker {
   --acms-admin-popover-padding-x: 0;
   --acms-admin-popover-padding-y: 0;
-  width: 340px;
+  width: 328px;
 }
 
 /* S1：縦リスト */
@@ -72,6 +72,7 @@
 }
 
 .acms-admin-emoji-picker {
+  --emoji-pad-x: 8px;
   display: flex;
   flex-direction: column;
   width: 100%;
@@ -87,7 +88,7 @@
 }
 
 .acms-admin-emoji-picker__search {
-  margin: 8px 8px 4px;
+  margin: var(--emoji-pad-x) var(--emoji-pad-x) 4px;
   padding: 6px 10px;
   border: 1px solid var(--emoji-border);
   border-radius: 6px;
@@ -103,8 +104,8 @@
 .acms-admin-emoji-picker__recent {
   display: flex;
   flex-wrap: wrap;
-  gap: 2px;
-  padding: 4px 8px;
+  gap: 0;
+  padding: 4px var(--emoji-pad-x);
   border-bottom: 1px solid var(--emoji-border);
 }
 
@@ -139,17 +140,19 @@
 }
 
 .acms-admin-emoji-picker [frimousse-category-header] {
-  padding: 8px 12px 4px;
+  /* 見出しの文字は、絵文字の字形の左端（ボタンの左端 + 6px）にそろえる */
+  padding: 8px calc(var(--emoji-pad-x) + 6px) 4px;
   background: var(--acms-admin-popover-bg, #fff);
   color: #6b7280;
   font-size: 12px;
   font-weight: 600;
 }
 
-/* 行を中央に寄せる（9 列 × 32px はビューポートより狭い） */
+/* 左寄せ。絵文字のボタン（32px）の左端を、検索欄・最近使った行と同じ --emoji-pad-x にそろえる */
 .acms-admin-emoji-picker [frimousse-row] {
   scroll-margin: 4px;
-  justify-content: center;
+  justify-content: flex-start;
+  padding: 0 var(--emoji-pad-x);
 }
 
 .acms-admin-emoji-picker__status {
@@ -163,7 +166,7 @@
 
 .acms-admin-emoji-picker__skin {
   align-self: flex-end;
-  margin: 4px 8px 8px;
+  margin: 4px var(--emoji-pad-x) var(--emoji-pad-x);
   padding: 2px 6px;
   border: 1px solid var(--emoji-border);
   border-radius: 6px;
