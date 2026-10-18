@@ -16,10 +16,26 @@ export function resolveAssetsUrl(config: Record<string, unknown> | undefined): s
 }
 
 /**
+ * 絵文字（4 バイト文字）を保存できる DB か。コアのライトエディターの絵文字ピッカーと同じ条件で、
+ * 接続文字コード（`ACMS.Config.dbCharset`。config.server.php の `DB_CONNECTION_CHARSET`）が
+ * utf8mb4 のときだけ使える。そうでないと、保存した絵文字が `?` などに化ける。
+ */
+export function canStoreEmoji(): boolean {
+  return window.ACMS?.Config?.dbCharset === 'utf8mb4';
+}
+
+/**
  * ここでは Tiptap を触らない（この時点ではまだ無い）。値が必要な処理はファクトリの中（エディターの
  * 読み込み後）で行う。
  */
 export function setup(ctx: PluginContext): void {
+  if (!canStoreEmoji()) {
+    console.info(
+      '[block-editor-emoji] DB の接続文字コードが utf8mb4 ではないため、絵文字の入力を無効にしました（config.server.php の DB_CONNECTION_CHARSET）。',
+    );
+    return;
+  }
+
   ctx.i18n.addResources('ja', resources.ja);
   ctx.i18n.addResources('en', resources.en);
 

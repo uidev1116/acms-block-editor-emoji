@@ -31,7 +31,7 @@ function fakeAcms(extra: Record<string, unknown> = {}) {
   const listeners: (() => void)[] = [];
   let done = false;
   const acms: any = {
-    Config: { root: '/' },
+    Config: { root: '/', dbCharset: 'utf8mb4' },
     adminReady: (fn: () => void) => (done ? fn() : listeners.push(fn)),
     ...extra,
   };

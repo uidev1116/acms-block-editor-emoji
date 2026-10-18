@@ -1,7 +1,13 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import { PLUGIN_NAME, resolveAssetsUrl, setup } from '../../frontend/plugin';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { PLUGIN_NAME, canStoreEmoji, resolveAssetsUrl, setup } from '../../frontend/plugin';
 
 afterEach(() => vi.unstubAllGlobals());
+
+const setCharset = (dbCharset: unknown) => {
+  (window as unknown as { ACMS: unknown }).ACMS = { Config: { root: '/', dbCharset } };
+};
+
+beforeEach(() => setCharset('utf8mb4'));
 
 function fakeCtx(config: Record<string, unknown> = {}) {
   return {
@@ -12,6 +18,23 @@ function fakeCtx(config: Record<string, unknown> = {}) {
     blockEditor: { registerExtension: vi.fn() },
   };
 }
+
+describe('canStoreEmoji（コアのライトエディターの絵文字ピッカーと同じ条件）', () => {
+  it('DB の接続文字コードが utf8mb4 のときだけ true', () => {
+    setCharset('utf8mb4');
+    expect(canStoreEmoji()).toBe(true);
+  });
+
+  it.each(['utf8', 'utf8mb3', '', null, undefined])('%s のときは false（4 バイト文字が壊れる）', (charset) => {
+    setCharset(charset);
+    expect(canStoreEmoji()).toBe(false);
+  });
+
+  it('ACMS.Config が無ければ false', () => {
+    (window as unknown as { ACMS: unknown }).ACMS = {};
+    expect(canStoreEmoji()).toBe(false);
+  });
+});
 
 describe('resolveAssetsUrl', () => {
   it('PHP から渡された assetsUrl を優先し、末尾のスラッシュを落とす', () => {
@@ -31,6 +54,18 @@ describe('resolveAssetsUrl', () => {
 });
 
 describe('setup', () => {
+  it('utf8mb4 でない DB では何も登録しない（保存した絵文字が壊れるため）', () => {
+    setCharset(null);
+    const info = vi.spyOn(console, 'info').mockImplementation(() => {});
+    const ctx = fakeCtx();
+    setup(ctx as never);
+    expect(ctx.blockEditor.registerExtension).not.toHaveBeenCalled();
+    expect(ctx.keyboardShortcuts.registerShortcut).not.toHaveBeenCalled();
+    expect(ctx.i18n.addResources).not.toHaveBeenCalled();
+    expect(info).toHaveBeenCalledWith(expect.stringContaining('utf8mb4'));
+    info.mockRestore();
+  });
+
   it('翻訳・ショートカット・拡張を登録する（Tiptap にはまだ触らない）', () => {
     const ctx = fakeCtx({ assetsUrl: '/a' });
     setup(ctx as never);
