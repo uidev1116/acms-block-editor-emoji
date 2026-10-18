@@ -59,6 +59,11 @@ function closeOnEscape(e: KeyboardEvent<HTMLElement>, onClose: () => void) {
   }
 }
 
+/** IME の変換中か（変換を確定する Enter も、この間のキーイベントとして届く） */
+function isComposingKey(e: KeyboardEvent<HTMLElement>): boolean {
+  return e.nativeEvent.isComposing || e.nativeEvent.keyCode === 229;
+}
+
 export function EmojiPicker({ emojibaseUrl, onSelect, onClose }: EmojiPickerProps) {
   const [attempt, setAttempt] = useState(0);
   const [failed, setFailed] = useState(false);
@@ -110,6 +115,11 @@ export function EmojiPicker({ emojibaseUrl, onSelect, onClose }: EmojiPickerProp
       resolveEmojiData={resolver}
       columns={9}
       onEmojiSelect={({ emoji }) => onSelect(emoji)}
+      // 変換中のキーは frimousse に渡さない（変換を確定する Enter で、選択中の絵文字が挿入されてしまうため）。
+      // preventDefault はしない（IME の確定は通常どおり行われる）
+      onKeyDownCapture={(e) => {
+        if (isComposingKey(e)) e.stopPropagation();
+      }}
       onKeyDown={(e) => closeOnEscape(e, onClose)}
     >
       <P.Search

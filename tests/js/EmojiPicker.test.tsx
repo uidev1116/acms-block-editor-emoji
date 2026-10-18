@@ -153,4 +153,29 @@ describe('EmojiPicker', () => {
     fireEvent.click(cell);
     expect(onSelect).toHaveBeenCalledWith('😄');
   });
+
+  it('検索欄で、IME の変換を確定する Enter では絵文字を挿入しない。通常の Enter では挿入する', async () => {
+    stubFetch();
+    const size = { width: 300, height: 300, top: 0, left: 0, right: 300, bottom: 300, x: 0, y: 0, toJSON: () => ({}) };
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(size as DOMRect);
+    for (const prop of ['clientHeight', 'clientWidth', 'offsetHeight', 'offsetWidth'] as const) {
+      vi.spyOn(HTMLElement.prototype, prop, 'get').mockReturnValue(300);
+    }
+    const onSelect = vi.fn();
+    render(<EmojiPicker emojibaseUrl="/emojibase" onSelect={onSelect} onClose={vi.fn()} />);
+    const search = screen.getByPlaceholderText('絵文字を検索');
+    fireEvent.change(search, { target: { value: 'にっこり' } });
+    await waitFor(() => {
+      const cells = [...document.querySelectorAll<HTMLElement>('[frimousse-emoji]')];
+      expect(cells.some((e) => e.textContent === '😄')).toBe(true);
+    });
+    // 検索結果がある状態で、候補が選ばれている（frimousse は検索中、先頭を選択状態にする）
+    // 変換中（isComposing / keyCode 229）の Enter は、frimousse に渡さない
+    fireEvent.keyDown(search, { key: 'Enter', isComposing: true });
+    fireEvent.keyDown(search, { key: 'Enter', keyCode: 229 });
+    expect(onSelect).not.toHaveBeenCalled();
+    // 変換中でない Enter は、これまでどおり選択する
+    fireEvent.keyDown(search, { key: 'Enter' });
+    expect(onSelect).toHaveBeenCalledWith('😄');
+  });
 });
