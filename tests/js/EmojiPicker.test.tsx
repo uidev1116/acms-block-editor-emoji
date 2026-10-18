@@ -69,6 +69,16 @@ describe('EmojiPicker', () => {
     outside.remove();
   });
 
+  it('検索欄に id と name がある（フォーム要素の警告の対策）。ブラウザの自動入力は無効', () => {
+    stubFetch();
+    render(<EmojiPicker emojibaseUrl="/emojibase" onSelect={vi.fn()} onClose={vi.fn()} />);
+    const search = screen.getByPlaceholderText('絵文字を検索');
+    expect(search.getAttribute('name')).toBe('block-editor-emoji-search');
+    expect(search.id).toMatch(/\S+/);
+    expect(search.getAttribute('autocomplete')).toBe('off');
+    expect(search.getAttribute('aria-label')).toBe('絵文字を検索');
+  });
+
   it('Esc で onClose', () => {
     stubFetch();
     const onClose = vi.fn();

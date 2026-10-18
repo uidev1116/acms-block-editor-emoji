@@ -1,7 +1,7 @@
 import { Alert } from '@ablogcms/components/alert';
 import { ButtonV2 } from '@ablogcms/components/button-v2';
 import { t } from '@ablogcms/i18n';
-import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
+import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
 import { EmojiPicker as P, defaultEmojiDataResolver, type EmojiDataResolver } from 'frimousse';
 import { augmentPickerData } from './emoji-data';
 import { getRecent } from './recent';
@@ -70,6 +70,7 @@ export function EmojiPicker({ emojibaseUrl, onSelect, onClose }: EmojiPickerProp
   const [query, setQuery] = useState('');
   const rootRef = useRef<HTMLDivElement>(null);
   const errorRef = useRef<HTMLDivElement>(null);
+  const searchId = useId();
 
   // 開いた直後に検索欄へフォーカスする（ページをスクロールさせない）。ツールバーのボタンから開いたときは、ボタンがフォーカスを持ち直すことがあるので、少し後に行う
   useEffect(() => {
@@ -123,6 +124,11 @@ export function EmojiPicker({ emojibaseUrl, onSelect, onClose }: EmojiPickerProp
       onKeyDown={(e) => closeOnEscape(e, onClose)}
     >
       <P.Search
+        id={searchId}
+        // id / name が無いフォーム要素は、ブラウザ（Chrome の Issues）に警告される。自動入力は不要
+        name="block-editor-emoji-search"
+        autoComplete="off"
+        aria-label={t('block-editor-emoji:search')}
         className="acms-admin-emoji-picker__search"
         placeholder={t('block-editor-emoji:search')}
         onChange={(e) => setQuery(e.target.value)}
