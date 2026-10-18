@@ -153,7 +153,6 @@ acms-block-editor-emoji/                 ← GitHub: uidev1116/acms-block-editor
 ├── docker-compose.yml / .env.example # PHPUnit 用（appleple/acms:3.2-php8.4 + MySQL）。ポートは .env で変える
 ├── package.json / package-lock.json  # Vite / vitest / TypeScript（3.4）
 ├── tsconfig.json / vite.config.ts / vitest.config.ts
-├── .node-version                    # Node のバージョン（CI と揃える）
 ├── frontend/                         # JS/TS・CSS のソース（zip には入らない）
 │   ├── index.ts                     # register() の入口（ACMS.plugins が無ければ何もしない）
 │   ├── extension.ts                 # createEmojiExtension(tiptap, deps)
@@ -377,7 +376,7 @@ class Hook
 | バックエンドへの取り込み | `git submodule add git@github.com:uidev1116/acms-block-editor-emoji.git plugins/BlockEditorEmoji`（`.gitmodules` は既存の ApiPreview と同じ SSH URL。デプロイの CI は HTTPS に読み替える）。`npm run setup`（`tools/setup.js`）が `ablogcms/extension/plugins/BlockEditorEmoji → ../../../plugins/BlockEditorEmoji/src` のシンボリックリンクを作る。Docker の web コンテナは `./plugins` を `/var/www/plugins` にマウントしているので、このリンクがそのまま効く。 |
 | `npm run setup` | `tools/setup.js` は各 submodule で `npm ci` → `npm run setup` を実行するので、`package.json` に `setup` スクリプトが**必須**（`"setup": "npm run build"`）。 |
 | ビルド成果物 | `src/assets/` は **Git に含めない**（`.gitignore`）。リリース時（`v*` タグ）に `release.yml` が `npm ci && npm run build` でビルドし、配布用の zip にだけ含める。`test.yml` の `frontend` ジョブでも、ビルドが通り成果物ができることだけを確認する。ローカルでは `npm run setup`（= `npm run build`）で作る。**バックエンドの現行デプロイ（`plugins/*/src` の rsync）はビルドしないため、そのままでは `assets/` が本番に届かない**。本番へは、リリースの zip を展開して反映するか、バックエンドのデプロイにビルド手順を足す必要がある（6 章の要判断事項）。 |
-| CI（`test.yml`） | スケルトンの `quality`（phpcs・PHPStan）と `phpunit`（PHP 8.1〜8.5 × a-blog cms 3.2）はそのまま使い、`frontend` ジョブを追加する：`setup-node`（`.node-version`）→ `npm ci` → `npm run typecheck` → `npm run coverage` → `npm run build` → 成果物ができていること。集約ジョブ `test` の `needs` に `frontend` を足す。 |
+| CI（`test.yml`） | スケルトンの `quality`（phpcs・PHPStan）と `phpunit`（PHP 8.1〜8.5 × a-blog cms 3.2）はそのまま使い、`frontend` ジョブを追加する：`setup-node`（`package.json` の `volta.node`）→ `npm ci` → `npm run typecheck` → `npm run coverage` → `npm run build` → 成果物ができていること。集約ジョブ `test` の `needs` に `frontend` を足す。 |
 | リリース | スケルトンのまま。`composer release:patch` などで `ServiceProvider::$version` を上げてタグを打ち、push すると `release.yml` が zip を GitHub Release に公開する。`package.json` の `version` と `frontend/index.ts` の `version` も同じ値にそろえる。 |
 | 本番デプロイ | プラグインの PR をマージした後、バックエンドで submodule の参照先を更新してコミットし、既存のデプロイ（`.github/workflows/deploy.yml`、rsync）で反映する。デプロイのワークフローは変更しない。**デプロイは明示的に許可されたときだけ**行う。 |
 
