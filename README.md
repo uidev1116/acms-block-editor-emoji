@@ -110,7 +110,7 @@ define('DB_CONNECTION_CHARSET', 'utf8mb4');
 
 ## 開発者向け情報
 
-必要なもの: Node 22（`.node-version`）、Docker（PHP のテスト用）
+必要なもの: Node 22（`.node-version`。Volta を使う場合は `package.json` の `volta` で自動的に切り替わります。バージョンを変えるときは両方をそろえてください）、Docker（PHP のテスト用）
 
 ```bash
 npm ci

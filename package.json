@@ -59,5 +59,8 @@
       "prettier --write"
     ],
     "*.{js,mjs,json,css,yml,yaml}": "prettier --write"
+  },
+  "volta": {
+    "node": "22.19.0"
   }
 }
