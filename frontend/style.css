@@ -59,6 +59,18 @@
 }
 
 /* P1：フルピッカー（frimousse） */
+
+/*
+ * frimousse はカテゴリ見出し・行・絵文字の高さを、`--frimousse-*-height` の CSS 変数（実測値）で
+ * 指定する。padding を足すと content-box では見出しが実測より高くなり、先頭の行が見出しの下に
+ * 隠れて切れる。padding を含めた高さにそろえるため border-box にする。
+ */
+.acms-admin-emoji-picker [frimousse-category-header],
+.acms-admin-emoji-picker [frimousse-row],
+.acms-admin-emoji-picker [frimousse-emoji] {
+  box-sizing: border-box;
+}
+
 .acms-admin-emoji-picker {
   display: flex;
   flex-direction: column;
@@ -134,9 +146,10 @@
   font-weight: 600;
 }
 
+/* 行を中央に寄せる（9 列 × 32px はビューポートより狭い） */
 .acms-admin-emoji-picker [frimousse-row] {
   scroll-margin: 4px;
-  padding: 0 8px;
+  justify-content: center;
 }
 
 .acms-admin-emoji-picker__status {
