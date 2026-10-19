@@ -31,16 +31,22 @@ final class HookTest extends TestCase
         return $callable();
     }
 
-    private function hook(mixed $admin, string $dirOffset = '', bool $enabled = true, string $charset = 'utf8mb4', bool $built = true): Hook
+    private function hook(mixed $admin, string $dirOffset = '', bool $enabled = true, string $charset = 'utf8mb4', bool $built = true, bool $contributor = false): Hook
     {
-        return new class ($admin, $dirOffset, $enabled, $charset, $built) extends Hook {
+        return new class ($admin, $dirOffset, $enabled, $charset, $built, $contributor) extends Hook {
             public function __construct(
                 private mixed $admin,
                 private string $offset,
                 private bool $enabledSetting,
                 private string $charset,
-                private bool $built
+                private bool $built,
+                private bool $contributor
             ) {
+            }
+
+            protected function isContributor()
+            {
+                return $this->contributor;
             }
 
             protected function assetsBuilt()
@@ -91,7 +97,20 @@ final class HookTest extends TestCase
     }
 
     #[Test]
-    #[TestDox('afterBuild() does nothing on public pages')]
+    #[TestDox('afterBuild() registers the assets on public pages for contributors or above (direct edit)')]
+    public function registersAssetsOnPublicPageForContributors(): void
+    {
+        $manager = $this->createMock(AssetManager::class);
+        $manager->expects($this->once())->method('style');
+        $manager->expects($this->once())->method('script');
+        Asset::swap($manager);
+
+        $res = '<html></html>';
+        $this->hook('', '', true, 'utf8mb4', true, true)->afterBuild($res);
+    }
+
+    #[Test]
+    #[TestDox('afterBuild() does nothing on public pages for visitors')]
     public function doesNothingOnPublicPage(): void
     {
         $manager = $this->createMock(AssetManager::class);
@@ -188,6 +207,20 @@ final class HookTest extends TestCase
         $this->hook('app_block_editor_emoji_index', '', true, '')->extendsTwig($twig);
         $this->assertSame('', $this->callRegistered($registered, 'block_editor_emoji_db_charset'));
         $this->assertFalse($this->callRegistered($registered, 'block_editor_emoji_db_ready'));
+    }
+
+    #[Test]
+    #[TestDox('the real Hook is not a contributor in CLI (no session)')]
+    public function realHookIsNotAContributorInCli(): void
+    {
+        $hook = new class extends Hook {
+            public function contributor(): bool
+            {
+                return $this->isContributor();
+            }
+        };
+
+        $this->assertFalse($hook->contributor());
     }
 
     #[Test]

@@ -41,11 +41,17 @@ class AssetRegistrar
     }
 
     /**
-     * Only admin screens (including the entry edit screen) have the block editor and ACMS.plugins.
+     * Admin screens (the user is always logged in there), and public pages for contributors or above:
+     * the direct edit on public pages also uses the block editor and ACMS.plugins (the core loads
+     * admin.js there only for those users). Without admin.js the script does nothing.
      */
-    public function shouldRegister(mixed $admin): bool
+    public function shouldRegister(mixed $admin, bool $isContributor = false): bool
     {
-        return is_string($admin) && $admin !== '';
+        if (!is_string($admin)) {
+            return false;
+        }
+
+        return $admin !== '' || $isContributor;
     }
 
     public function register(AssetManager $assets): void

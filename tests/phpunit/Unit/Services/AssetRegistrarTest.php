@@ -14,25 +14,27 @@ use PHPUnit\Framework\Attributes\TestDox;
 final class AssetRegistrarTest extends TestCase
 {
     /**
-     * @return array<string, array{mixed, bool}>
+     * @return array<string, array{mixed, bool, bool}>
      */
-    public static function adminValues(): array
+    public static function screens(): array
     {
         return [
-            'entry edit screen' => ['entry_editor', true],
-            'any admin screen' => ['top', true],
-            'public page (empty string)' => ['', false],
-            'public page (null)' => [null, false],
-            'public page (false)' => [false, false],
+            'entry edit screen' => ['entry_editor', false, true],
+            'any admin screen' => ['top', false, true],
+            'public page, contributor or above' => ['', true, true],
+            'public page, not logged in (or below contributor)' => ['', false, false],
+            'public page (null ADMIN), contributor' => [null, true, false],
+            'public page (false ADMIN), contributor' => [false, true, false],
         ];
     }
 
     #[Test]
-    #[TestDox('shouldRegister() is true only on admin screens')]
-    #[DataProvider('adminValues')]
-    public function shouldRegisterOnlyOnAdmin(mixed $admin, bool $expected): void
+    #[TestDox('shouldRegister() is true on admin screens, and on public pages only for contributors or above')]
+    #[DataProvider('screens')]
+    public function shouldRegisterOnAdminOrForContributors(mixed $admin, bool $contributor, bool $expected): void
     {
-        $this->assertSame($expected, (new AssetRegistrar('/extension/plugins/BlockEditorEmoji/assets/'))->shouldRegister($admin));
+        $registrar = new AssetRegistrar('/extension/plugins/BlockEditorEmoji/assets/');
+        $this->assertSame($expected, $registrar->shouldRegister($admin, $contributor));
     }
 
     #[Test]

@@ -657,7 +657,7 @@ export function searchEmoji(data: EmojiEntry[], query: string, limit: number): E
 
 | # | 結果 |
 |---|---|
-| U-1 | エントリー編集画面（`ADMIN` = `entry_editor`）と一覧などの管理画面で `index.js` / `index.css` が出力される。公開側（`ADMIN` が空）では登録しない（`AssetRegistrar::shouldRegister()`）。公開側テーマ上のダイレクト編集・ユニットとしてのブロックエディターは `ADMIN` が空なので**対象外**（読み込まれない）。必要になったら条件を足す。 |
+| U-1 | エントリー編集画面（`ADMIN` = `entry_editor`）と一覧などの管理画面で `index.js` / `index.css` が出力される。公開側（`ADMIN` が空）では、投稿者以上でログインしている（`sessionWithContribution()`）かつプレビュー表示でないときだけ登録する（`AssetRegistrar::shouldRegister($admin, $isContributor)`。コアがテーマ向けに `acms.js` を読み込む条件と同じ）。公開側のダイレクト編集・テーマ上のブロックエディターでも使えるようにするため。未ログインの訪問者には読み込まない。公開側でダイレクト編集が有効なときの実機での動作は未確認。 |
 | U-2 | **そのままでは不安定**。管理画面の JS（`/js/dest/admin.js`）は `async` で読み込まれるため、`type="module"` のプラグインが先に実行されて `ACMS.plugins` / `ACMS.Library.React` が無いことがある（ドキュメントの「実行順が保証される」は当てにならない）。IIFE は externals を読み込み時に束縛するので `Cannot read properties of undefined (reading 'React')` で落ちる。対策は 6 章「設計から変えた点」の 1。 |
 | U-3 | PHP から値は渡していない。`ctx.config.assetsUrl` があればそれを、無ければ `ACMS.Config.root` から組み立てた URL を使う（`frontend/plugin.ts` の `resolveAssetsUrl`）。 |
 | U-4 | 行頭・全角コロンとも動く。ただし `allowedPrefixes` に `' '` などを並べると日本語の直後（`今日は：ねこ`）で出ないため、`allowedPrefixes: null` にして、直前の文字は `allow`（`frontend/position.ts` の `isAllowedPosition`）で判定する。 |

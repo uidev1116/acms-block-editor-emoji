@@ -37,7 +37,7 @@ export const globals: Record<string, string> = {
  * ある（ACMS.plugins / ACMS.Library.React がまだ無い）。IIFE は externals を読み込み時に束縛するので、
  * 全体を関数で包み、コアが公開している ACMS.adminReady（acms.js が同期で定義する。admin.js の初期化後に
  * 発火し、後から呼んでも即時に実行される）で実行する。
- * 管理画面以外（admin.js が無く adminReady が発火しない）では何も実行しない。
+ * admin.js が読み込まれないページ（未ログインの公開ページなど。adminReady が発火しない）では何も実行しない。
  * register() が投げた例外は握りつぶす（admin.js の初期化の通知を止めないため）。
  */
 const BOOT_BANNER = ';(function(){var __run=function(){try{';
