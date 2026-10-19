@@ -6,6 +6,7 @@ namespace Acms\Plugins\BlockEditorEmoji\Tests\Unit;
 
 use Acms\Plugins\BlockEditorEmoji\Hook;
 use Acms\Plugins\BlockEditorEmoji\ServiceProvider;
+use Acms\Plugins\BlockEditorEmoji\Services\Requirements;
 use Acms\Services\Common\HookFactory;
 use Acms\Services\Common\InjectTemplate;
 use Acms\TestingFramework\TestCase;
@@ -57,7 +58,8 @@ final class ServiceProviderTest extends TestCase
     {
         $provider = new ServiceProvider();
 
-        $this->assertTrue($provider->checkRequirements()); // テスト環境のコア（3.2.37）は条件を満たす
+        // テスト環境のコアのバージョンに応じて、Requirements と同じ結果になる
+        $this->assertSame(Requirements::isSupported(defined('VERSION') ? VERSION : null), $provider->checkRequirements());
         $this->assertTrue($provider->update());
         $this->assertTrue($provider->activate());
         $this->assertTrue($provider->deactivate());

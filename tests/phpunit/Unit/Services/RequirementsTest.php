@@ -18,20 +18,21 @@ final class RequirementsTest extends TestCase
     public static function versions(): array
     {
         return [
-            'exactly the minimum' => ['3.2.36', true],
-            'newer patch' => ['3.2.37', true],
+            'exactly the minimum' => ['3.2.38', true],
+            'newer patch' => ['3.2.39', true],
             'newer minor' => ['3.3.0', true],
             'newer major' => ['4.0.0', true],
-            'one patch older' => ['3.2.35', false],
+            'one patch older' => ['3.2.37', false],
+            'before the extension points' => ['3.2.35', false],
             'much older' => ['3.1.9', false],
-            'older with a suffix' => ['3.2.35-beta.1', false],
+            'older with a suffix' => ['3.2.37-beta.1', false],
             'unknown (empty)' => ['', true],
             'unknown (null)' => [null, true],
         ];
     }
 
     #[Test]
-    #[TestDox('isSupported() requires a-blog cms 3.2.36 or later')]
+    #[TestDox('isSupported() requires a-blog cms 3.2.38 or later')]
     #[DataProvider('versions')]
     public function isSupportedFromMinimum(mixed $version, bool $expected): void
     {
@@ -39,9 +40,9 @@ final class RequirementsTest extends TestCase
     }
 
     #[Test]
-    #[TestDox('the minimum version is 3.2.36')]
+    #[TestDox('the minimum version is 3.2.38')]
     public function minimumIs3236(): void
     {
-        $this->assertSame('3.2.36', Requirements::MIN_ACMS_VERSION);
+        $this->assertSame('3.2.38', Requirements::MIN_ACMS_VERSION);
     }
 }

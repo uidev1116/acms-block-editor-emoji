@@ -2,7 +2,7 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { VERSION } from '../../frontend/plugin';
-import { globals } from '../../vite.config';
+import { isExternal } from '../../vite.config';
 
 /** バージョンは 3 か所にある（リリース時にそろえる）。ずれたらここで気づく */
 describe('バージョン', () => {
@@ -44,11 +44,12 @@ describe('依存の宣言', () => {
     ).toEqual([]);
   });
 
-  it('バンドルに同梱される（ホストが公開しない）パッケージは dependencies にある', () => {
+  it('バンドルに同梱される（ホストが公開しない）パッケージは dependencies にあり、公開されているものは external', () => {
     // 型だけの import（実行時には消える）は除く
     const typeOnly = ['@ablogcms/block-editor/tiptap', '@ablogcms/block-editor/types', '@ablogcms/types/acms'];
+    // （external = ホストがグローバルで公開しているもの。`@ablogcms/components/*` はコアが公開する）
     const bundled = specifiers()
-      .filter((spec) => !(spec in globals) && !typeOnly.includes(spec))
+      .filter((spec) => !isExternal(spec) && !typeOnly.includes(spec))
       .map(packageName);
     expect(bundled.filter((n) => !(n in pkg.dependencies))).toEqual([]);
   });
