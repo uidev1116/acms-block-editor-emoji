@@ -17,14 +17,13 @@
     "format:check": "prettier --check ."
   },
   "dependencies": {
-    "@ablogcms/components": "3.2.37",
     "@ablogcms/i18n": "3.2.37",
     "@ablogcms/plugins": "3.2.37",
-    "@floating-ui/react": "0.27.20",
     "frimousse": "^0.4.0"
   },
   "devDependencies": {
     "@ablogcms/block-editor": "3.2.37",
+    "@ablogcms/components": "3.2.37",
     "@ablogcms/types": "3.2.37",
     "@eslint/js": "^10.0.1",
     "@testing-library/dom": "^10.4.2",

@@ -75,7 +75,8 @@
   flex-direction: column;
   width: 100%;
   height: 380px;
-  max-height: var(--acms-admin-emoji-max-height, 380px);
+  /* 画面に収まらないときは高さを抑える（Popover の flip / shift で画面内に寄せる） */
+  max-height: min(380px, calc(100vh - 16px));
   isolation: isolate;
 }
 

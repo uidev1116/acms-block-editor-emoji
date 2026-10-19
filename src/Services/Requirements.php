@@ -5,12 +5,13 @@ declare(strict_types=1);
 namespace Acms\Plugins\BlockEditorEmoji\Services;
 
 /**
- * Minimum a-blog cms version. 3.2.36 is the first release that has everything this plugin relies on
- * (ACMS.plugins keyboardShortcuts / i18n.addResources and the block editor's blockMenu extension point).
+ * Minimum a-blog cms version. 3.2.38 is the first release whose admin.js shares react-dom and the design
+ * system components with plugins (ACMS.Library.ReactDom / ACMS.Library.components), on top of the
+ * ACMS.plugins extension points (keyboardShortcuts, i18n.addResources, blockMenu) that arrived in 3.2.36.
  */
 final class Requirements
 {
-    public const MIN_ACMS_VERSION = '3.2.36';
+    public const MIN_ACMS_VERSION = '3.2.38';
 
     /**
      * An unknown version (constant not defined) is not blocked, since it cannot be verified.

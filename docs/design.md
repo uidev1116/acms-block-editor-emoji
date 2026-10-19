@@ -3,7 +3,7 @@
 a-blog cms のブロックエディターに機能を追加する**独立したプラグイン**の設計書。この 1 冊だけで実装を始められるようにしてある。
 
 
-作成 2026-10-18 ／ 動作条件 a-blog cms 3.2.36 以上 ／ 対象 @ablogcms/* 3.2.37（Tiptap 3.3x / React 19） ／ ビルド Vite 8 ライブラリモード（IIFE） ／ plugins/BlockEditorEmoji/
+作成 2026-10-18 ／ 動作条件 a-blog cms 3.2.38 以上 ／ 対象 @ablogcms/* 3.2.37（Tiptap 3.3x / React 19） ／ ビルド Vite 8 ライブラリモード（IIFE） ／ plugins/BlockEditorEmoji/
 
 > **UI パターン：S1（縦リスト）・T1（ツールバーのボタン＋ショートカット）・P1（フルピッカー）で実装した**
 >
@@ -36,7 +36,7 @@ npm の `@ablogcms` スコープには 3.2.37 時点で 23 パッケージがあ
 | `@ablogcms/i18n` | `t()` のファサード（`ACMS.i18n` に委譲） | 【実行時】 | ツールチップなどの翻訳を引く。登録は `ctx.i18n.addResources`、参照は `t('plugin-name:key')`。 |
 | `@ablogcms/events` | 型付きイベントバス（`ACMS.events`） | 【使わない】 | この機能はエディター内で完結し、フックすべきイベントが無い（ブロックエディター系のイベントは未定義）。購読が必要になったら `ctx.events.on` を使う（直接 import は不要）。 |
 | `@ablogcms/types` | 横断型。`MaterialSymbol` 等 | 【型だけ】 | アイコン名の型チェック。`add_reaction` が存在することを確認済み。 |
-| `@ablogcms/components` | 管理画面 UI 部品（popover, button-v2, alert など） | 【実行時（必要な部品だけ）】 | デザインシステムの `Popover`（候補リストとピッカーの枠・位置合わせ・外側クリック・z-index）、`Alert`、`ButtonV2`（ピッカーのエラー表示）を使い、管理画面と見た目をそろえる。`@floating-ui/react` や `classnames` が同梱される。`react-dom` は公開されていないので、代用品（`frontend/shims/react-dom.ts`）に差し替える（6 章）。個別のサブパス（`/popover` など）から import し、`@ablogcms/components` のルートや、`@dnd-kit` などに依存する部品は import しない。 |
+| `@ablogcms/components` | 管理画面 UI 部品（popover, button-v2, alert など） | 【ホストのものを使う（external）】 | デザインシステムの `Popover`（候補リストとピッカーの枠・位置合わせ・外側クリック・z-index）、`Alert`、`ButtonV2`（ピッカーのエラー表示）を使い、管理画面と見た目をそろえる。コア（3.2.38 以上）が `ACMS.Library.components['<サブパス名>']` で公開しているので、サブパス（`@ablogcms/components/popover` など）から import し、ビルドで external にする（同梱しない）。型とテストのために devDependency に置く。 |
 | `@ablogcms/react-utils` / `react-hooks` | React ヘルパー | 【使わない】 | 必要なのは `ReactRenderer`（Tiptap 由来、ランタイムで渡される）だけ。 |
 | `@ablogcms/dialog` / `notify` / `media` ほか | — | 【使わない】 | 不要。 |
 
@@ -139,7 +139,8 @@ ctx.blockEditor.registerExtension('details', async () => {
 | `@tiptap/react` | `ACMS.Library.tiptap.react` | 同上 | 〃 |
 | `@tiptap/suggestion` | `ACMS.Library.tiptap.suggestion` | 同上 | 〃 |
 | `@tiptap/pm/state` など | `ACMS.Library.tiptap.pm.state` など | 同上 | 〃 |
-| `react-dom` | —（公開されていない） | — | **本物は同梱しない**。`@ablogcms/components` の Popover が使う `@floating-ui/react` は `react-dom` の `createPortal` / `flushSync` だけを使うので、vite の alias で `frontend/shims/react-dom.ts`（この 2 つだけを置いた代用品）に差し替える。ポータルの描画はホストの React DOM が行う。 |
+| `react-dom` / `react-dom/client` | `ACMS.Library.ReactDom` / `ACMS.Library.ReactDomClient` | コア（3.2.38 以上）が公開 | ホストの React DOM を共有する。プラグインのコードは直接 import しないが、公開されているので、`@ablogcms/components` などが必要とする `createPortal` / `flushSync` はここから届く。 |
+| `@ablogcms/components/<サブパス>` | `ACMS.Library.components['<サブパス>']` | コア（3.2.38 以上）が公開 | キーはサブパス名と同じ（`button-v2` のようにハイフンを含むので括弧記法）。vite.config.ts の `isExternal` / `globalFor` が接頭辞で機械的に external にする。 |
 
 ### 3.3 リポジトリ構成（acms-plugin-skeleton がベース）
 
@@ -276,7 +277,7 @@ export default defineConfig(({ mode }) => ({
 }));
 ```
 
-ビルド後、`src/assets/index.js` に `react` や `@tiptap` の実装が含まれていないことを確認する（`grep -c "prosemirror" src/assets/index.js` が 0、バンドルサイズの目安は 100KB 未満（デザインシステムの Popover と `@floating-ui/react` を含む）、絵文字データも含まれていないこと）。
+ビルド後、`src/assets/index.js` に `react` や `@tiptap` の実装が含まれていないことを確認する（`grep -c "prosemirror" src/assets/index.js` が 0、バンドルサイズの目安は 60KB 未満。デザインシステムの部品（Popover など）や react-dom は external なので含まれない、絵文字データも含まれていないこと）。
 
 **`plugins/BlockEditorEmoji/tsconfig.json（要点）`**
 
@@ -409,7 +410,7 @@ class Hook
 | `ReactRenderer` | **ランタイム**（`tiptap.react`） | 候補リストとピッカーの描画 | エディターの React ツリーに描画する。その中で、デザインシステムの `Popover` が `body` へポータルで出す。 |
 | `frimousse` 0.4 | npm（同梱） | ピッカー UI | 依存は `react` と `react/jsx-runtime` だけ（ソースで確認済み）で、どちらも external にできる。スタイルなし・合成型の部品で、管理画面の見た目に合わせやすい。仮想スクロール・キーボード操作・`locale="ja"`・肌の色に対応。データの取得先を `emojibaseUrl` で変えられる。 |
 | `emojibase-data` | npm（**JS には含めず静的ファイルとしてコピー**） | ピッカーとサジェストの辞書 | frimousse が使うデータそのもの。`ja/data.json`（日本語の名前・タグ）、`ja/messages.json`（カテゴリ名）、`en/shortcodes/github.json`（`:smile` 形式）を `src/assets/emojibase/` にコピーする。frimousse の既定は jsDelivr の CDN から取得するが、管理画面から外部 CDN に依存しないよう自前で配信する。 |
-| `@floating-ui/react` | npm（`@ablogcms/components` 経由で同梱） | ポップアップの位置合わせ | Popover の内部で使われる。同梱するのは `react-dom` を代用品にしたうえでの話（6 章）。 |
+| `@floating-ui/react` | 使わない | — | Popover の内部で使われるが、Popover ごとコアが公開しているので、プラグインには入らない。 |
 | `emoji-mart` | — | — | 【不採用】：Web Components ベースで重く、`@emoji-mart/react` の peer が React 18 までで止まっている（2023 年以降更新なし）。 |
 
 ### 4.4 構成
@@ -605,7 +606,7 @@ export function searchEmoji(data: EmojiEntry[], query: string, limit: number): E
 - [ ] 保存した HTML に絵文字が文字として入っていて、余計な要素が無い。
 - [ ] オフラインや 404 で辞書の取得に失敗しても、エディターは動き続ける（ピッカーにエラーを表示し、次に開いたとき再取得する）。
 - [ ] vitest：`searchEmoji`（ひらがな／カタカナ、ショートコード、並び順）と `recent.ts`。
-- [ ] バンドルに react / tiptap / prosemirror の実装が含まれず、絵文字データも含まれていない（JS は 100KB 未満が目安）。
+- [ ] バンドルに react / tiptap / prosemirror の実装が含まれず、絵文字データも含まれていない（JS は 60KB 未満が目安）。
 
 ## 5. 確認事項・リスク
 
@@ -673,7 +674,7 @@ export function searchEmoji(data: EmojiEntry[], query: string, limit: number): E
 5. **検索順位**：ショートコードの完全一致を最優先にした（`:smile` で 😄 が 😃 より上）。順は 完全一致 > ショートコード前方一致 > 名前前方一致 > タグ前方一致 > 部分一致。
 6. **ピッカーの日本語検索**：frimousse の検索はひらがなとカタカナを区別する（「ねこ」で「ネコ」が出ない）ため、`resolveEmojiData` で名前とタグのひらがな・カタカナ表記をタグに足す（`augmentPickerData`。表示は変えない）。
 7. **ピッカーの読み込み失敗**：frimousse は失敗を `console.error` に出すだけで画面に何も出さない。そこで `defaultEmojiDataResolver` を包んで失敗を検知し、エラーと「再試行」ボタンを表示する。失敗したらリゾルバーの関数を作り直す（frimousse はリゾルバーごとに結果を覚えるため）ので、次に開いたとき再取得される。
-8. **ポップアップは管理画面のデザインシステムの `Popover`**（`@ablogcms/components/popover`）で出す（`frontend/PopupShell.tsx`）。位置合わせ（`getAnchorRect` の仮想要素でカーソル位置を指す）、はみ出し防止、外側クリック、z-index（`.acms-admin-popover`）、見た目はそちらに任せる。`size` ミドルウェアで高さを抑える。フォーカスは Popover に任せず（FloatingFocusManager は位置が決まる前にフォーカスしてページが先頭へスクロールするため無効化）、ピッカーが自分で検索欄へ `preventScroll` 付きでフォーカスする（frimousse の `autoFocus` も同じ理由で使わない）。エラー表示は `Alert` と `ButtonV2`（`outlined`）。
+8. **ポップアップは管理画面のデザインシステムの `Popover`**（`@ablogcms/components/popover`）で出す（`frontend/PopupShell.tsx`）。位置合わせ（`getAnchorRect` の仮想要素でカーソル位置を指す）、はみ出し防止、外側クリック、z-index（`.acms-admin-popover`）、見た目はそちらに任せる。高さは CSS で抑える。フォーカスは Popover に任せず（FloatingFocusManager は位置が決まる前にフォーカスしてページが先頭へスクロールするため無効化）、ピッカーが自分で検索欄へ `preventScroll` 付きでフォーカスする（frimousse の `autoFocus` も同じ理由で使わない）。エラー表示は `Alert` と `ButtonV2`（`outlined`）。
 9. **コードブロック内**では、ツールバーの絵文字ボタンは無効、`insertEmoji` / `openEmojiPicker` は何もしない。
 10. **PHP**：`Hook` は `ADMIN` / `DIR_OFFSET` を `protected` メソッド経由で読む（定数は再定義できずテストできないため）。PHPUnit のカバレッジは、コア側のオートローダーがマウント先 `/var/www/html/extension/plugins/BlockEditorEmoji` から読み込むため、`phpunit.coverage.xml.dist` を別に用意し `composer coverage` で測る。Docker のイメージは `3.2-php8.4`、ポートは `.env` の `ACMS_PORT`（18082）。
 11. **リポジトリ構成**：`frontend/plugin.ts`（`setup` と URL 解決）と `frontend/position.ts` を追加し、`index.ts` は `register` だけにした（テストしやすくするため）。テストは `tests/js/` に置き、Tiptap の実物（`@tiptap/core` など）を渡した本物のエディターで統合テストしている。
@@ -687,8 +688,8 @@ export function searchEmoji(data: EmojiEntry[], query: string, limit: number): E
 19. **CSS のクラス名**は管理画面用の接頭辞 `acms-admin-` に合わせて `acms-admin-emoji-*`（ポップアップは `acms-admin-emoji-popup`）にした。
 20. **絵文字を保存できる DB のときだけ有効にする**。コアのライトエディターの絵文字ピッカーと同じ条件で、`ACMS.Config.dbCharset`（`config.server.php` の `DB_CONNECTION_CHARSET`）が `utf8mb4` のときだけ拡張を登録する。そうでないと、保存した絵文字が `?` などに化ける。満たさないときは `console.info` を出して何も登録しない（`frontend/plugin.ts` の `canStoreEmoji`）。コアのライトエディターは加えて `LiteEditorUseEmojiPicker` の設定とモバイルかどうかも見ているが、前者はライトエディター用の設定なので見ていない。後者は、サジェストが OS の絵文字キーボードの邪魔にならないため見ていない。
 21. **設定画面（オン／オフ）**を追加した。拡張アプリの一覧の「設定」から開く Twig 製のページ（`src/template/admin/main.twig`）で、ブログごとに `block_editor_emoji_enabled`（`on` が既定、`off`）を標準の `ACMS_POST_Config` で保存する。`off` のとき `Hook::afterBuild()` が JS / CSS を登録しない。DB の接続文字コードが `utf8mb4` でないときは、画面に警告を出す。
-22. **最低バージョンは a-blog cms 3.2.36**（動作条件）。`@ablogcms/plugins` / `block-editor` の各リリースを調べ、依存している機能（`ctx.keyboardShortcuts.registerShortcut`、`ctx.i18n.addResources`、ブロックエディターの `blockMenu` 拡張点）が揃う最初のバージョンが 3.2.36 だった（3.2.35 以前は `registerShortcut`・`addResources`・`BlockMenuButtonItem` が無い）。`Services/Requirements`（`ServiceProvider::checkRequirements()`）が、インストール時に `VERSION` が 3.2.36 以上であることを確認する。型は 3.2.37 に固定してビルドする。
-23. **`react-dom` の代用品**：ホストは `react-dom` を公開していない。`@ablogcms/components` の Popover（`@floating-ui/react`）と、`@ablogcms/react-hooks` 経由で巻き込まれる `@ablogcms/react-utils`（`react-dom/client` を import している）のために、vite の alias（`vite.config.ts`、vitest も同じ設定）で `frontend/shims/react-dom.ts` に差し替える。`createPortal`（React のポータル要素を作るだけ。描画はホストの React DOM）と `flushSync`（即時実行）を持ち、`createRoot` / `hydrateRoot` は呼ぶと例外を投げる。`react-dom` 本体（約 130KB）を同梱して React DOM を二重にするより小さく安全。バンドルは約 91KB になった（目安を 100KB 未満に変更）。
+22. **最低バージョンは a-blog cms 3.2.38**（動作条件）。コアが `ACMS.Library.ReactDom` / `ReactDomClient` / `components`（デザインシステムの部品）を公開した最初のバージョン。拡張 API（`ctx.keyboardShortcuts.registerShortcut`、`ctx.i18n.addResources`、ブロックエディターの `blockMenu`）自体は 3.2.36 から揃っていたが、デザインシステムの部品を同梱せずに使うために 3.2.38 とした。`Services/Requirements`（`ServiceProvider::checkRequirements()`）が、インストール時に `VERSION` が 3.2.38 以上であることを確認する。インストール済みの環境でコアが古いとき（`ACMS.Library.ReactDom` / `components` が無い）は、JS が何も登録せず、`console.info` で必要なバージョンを案内する（vite.config.ts の `BOOT_BANNER`）。`@ablogcms/*` の型は npm にある最新の 3.2.37 でビルドする。
+23. **`react-dom` と部品は external**：当初は、ホストが `react-dom` を公開していなかったため、`createPortal` / `flushSync` だけの代用品（`frontend/shims/react-dom.ts`、vite の alias）に差し替え、Popover などの実装（`@floating-ui/react`、`classnames` ほか）を同梱していた（バンドルは約 91KB）。コア 3.2.38 が `ReactDom` / `ReactDomClient` / `components` を公開したため、代用品を廃止し、すべて external にした（バンドルは約 38KB）。Popover の位置合わせは Popover 標準（flip / shift）に任せ、高さは CSS（`max-height: min(380px, calc(100vh - 16px))`）で抑える。
 24. **PHP の対応バージョンは 8.1〜8.5**。CI の phpunit はこの範囲（`php: ['8.1' … '8.5']`）で回し、phpcs（PHPCompatibility）と PHPStan も 8.1〜8.5 を対象にしている。8.6 以降は未検証で、README にもその旨を書いた。
 25. **CI**：`frontend` ジョブで `npm run coverage`（vitest のカバレッジ）も実行する。
 

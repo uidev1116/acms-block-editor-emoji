@@ -1,6 +1,5 @@
 import { Popover, PopoverContent } from '@ablogcms/components/popover';
 import { t } from '@ablogcms/i18n';
-import { flip, offset, shift, size } from '@floating-ui/react';
 import { forwardRef, type ComponentType } from 'react';
 
 export type PopupVariant = 'list' | 'picker';
@@ -16,8 +15,8 @@ interface Props {
 }
 
 /**
- * 管理画面のデザインシステム（`@ablogcms/components` の Popover）で包む。位置合わせ・はみ出し防止・
- * 外側クリック・フォーカス管理・z-index（`.acms-admin-popover`）はそちらに任せる。
+ * 管理画面のデザインシステム（`@ablogcms/components` の Popover。コアが `ACMS.Library.components` で公開）で包む。
+ * 位置合わせ・はみ出し防止（flip / shift）・外側クリック・z-index（`.acms-admin-popover`）はそちらに任せる。
  * 基準位置は仮想要素（`getAnchorRect`）なので、エディターの中のカーソル位置を指せる。
  */
 export const PopupShell = forwardRef<unknown, Props>(function PopupShell(
@@ -39,23 +38,6 @@ export const PopupShell = forwardRef<unknown, Props>(function PopupShell(
       // フォーカスの移動はこちらでは扱わない。FloatingFocusManager は、開いた直後（位置が決まる前）に
       // フォーカスしてページが先頭へスクロールしてしまうため。ピッカーは自分で検索欄へ移す（EmojiPicker）
       focusManagerOptions={{ disabled: true }}
-      floatingOptions={{
-        middleware: [
-          offset(4),
-          flip({ padding: 8 }),
-          shift({ padding: 8 }),
-          // 空きが足りないときは、画面からはみ出さないよう高さを抑える（CSS が参照する）
-          size({
-            padding: 8,
-            apply({ availableHeight, elements }) {
-              elements.floating.style.setProperty(
-                '--acms-admin-emoji-max-height',
-                `${Math.max(Math.floor(availableHeight), 160)}px`,
-              );
-            },
-          }),
-        ],
-      }}
     >
       <PopoverContent
         size="small"
