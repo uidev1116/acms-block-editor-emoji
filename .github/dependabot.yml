@@ -41,6 +41,13 @@ updates:
       # Development dependencies: major, minor and patch updates are all grouped.
       npm-development:
         dependency-type: 'development'
+      # Everything else (mainly indirect dependencies, which the groups above do not match): minor and patch only.
+      npm-other:
+        patterns:
+          - '*'
+        update-types:
+          - 'minor'
+          - 'patch'
 
   # All Composer packages are development tools. ablogcms/testing-framework is pinned to the
   # a-blog cms minor it tests against (3.2.*), so it stays on that line by its own constraint.
@@ -61,3 +68,10 @@ updates:
       # Development dependencies: major, minor and patch updates are all grouped.
       composer-development:
         dependency-type: 'development'
+      # Everything else (mainly indirect dependencies, which the groups above do not match): minor and patch only.
+      composer-other:
+        patterns:
+          - '*'
+        update-types:
+          - 'minor'
+          - 'patch'

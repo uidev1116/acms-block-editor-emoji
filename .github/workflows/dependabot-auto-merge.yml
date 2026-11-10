@@ -2,7 +2,8 @@ name: Dependabot auto-merge
 
 # Auto-merge Dependabot PRs once the required checks pass:
 #   - production dependencies: patch and minor updates only (a major update is reviewed by hand)
-#   - development dependencies (including indirect ones): major, minor and patch updates
+#   - development dependencies: major, minor and patch updates
+#   - everything else, mainly indirect dependencies (the *-other groups): minor and patch updates
 #   - GitHub Actions: patch and minor updates
 # The groups are defined in .github/dependabot.yml.
 #
@@ -33,8 +34,10 @@ jobs:
           steps.metadata.outputs.package-ecosystem == 'github_actions') ||
           steps.metadata.outputs.dependency-group == 'npm-production' ||
           steps.metadata.outputs.dependency-group == 'npm-development' ||
+          steps.metadata.outputs.dependency-group == 'npm-other' ||
           steps.metadata.outputs.dependency-group == 'composer-production' ||
-          steps.metadata.outputs.dependency-group == 'composer-development'
+          steps.metadata.outputs.dependency-group == 'composer-development' ||
+          steps.metadata.outputs.dependency-group == 'composer-other'
         run: gh pr merge --auto --squash "$PR_URL"
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
