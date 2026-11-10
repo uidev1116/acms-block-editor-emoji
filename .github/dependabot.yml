@@ -25,6 +25,9 @@ updates:
       # typescript-eslint supports TypeScript < 6.1 only. Revisit when it supports 6.1+ / 7.
       - dependency-name: 'typescript'
         versions: ['>=6.1.0']
+      # @tiptap/* must stay on the version @ablogcms/block-editor uses. A different version installs a second
+      # copy of @tiptap/core and breaks the Editor types, so bump them by hand with @ablogcms/*.
+      - dependency-name: '@tiptap/*'
     # Indirect dependencies are updated too (Dependabot tracks direct ones only by default).
     allow:
       - dependency-type: 'all'
