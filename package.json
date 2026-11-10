@@ -18,7 +18,7 @@
   },
   "dependencies": {
     "@ablogcms/i18n": "3.2.39",
-    "@ablogcms/plugins": "3.2.37",
+    "@ablogcms/plugins": "3.2.39",
     "frimousse": "^0.4.0"
   },
   "devDependencies": {
