@@ -5,6 +5,7 @@ name: Dependabot auto-merge
 #   - development dependencies: major, minor and patch updates
 #   - everything else, mainly indirect dependencies (the *-other groups): minor and patch updates
 #   - GitHub Actions: patch and minor updates
+#   - indirect dependencies updated on their own (not in a group): minor and patch updates
 # The groups are defined in .github/dependabot.yml.
 #
 # Requires (in repo Settings): "Allow auto-merge" enabled, and a branch protection rule on the
@@ -30,6 +31,9 @@ jobs:
       # Anything outside these groups (e.g. a major update of a production dependency) is left for manual review
       - name: Enable auto-merge
         if: >-
+          (steps.metadata.outputs.dependency-type == 'indirect' &&
+          (steps.metadata.outputs.update-type == 'version-update:semver-patch' ||
+          steps.metadata.outputs.update-type == 'version-update:semver-minor')) ||
           ((steps.metadata.outputs.update-type == 'version-update:semver-patch' || steps.metadata.outputs.update-type == 'version-update:semver-minor') &&
           steps.metadata.outputs.package-ecosystem == 'github_actions') ||
           steps.metadata.outputs.dependency-group == 'npm-production' ||
