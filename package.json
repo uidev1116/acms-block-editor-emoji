@@ -17,8 +17,8 @@
     "format:check": "prettier --check ."
   },
   "dependencies": {
-    "@ablogcms/i18n": "3.2.39",
-    "@ablogcms/plugins": "3.2.39",
+    "@ablogcms/i18n": "3.2.40",
+    "@ablogcms/plugins": "3.2.40",
     "frimousse": "^0.4.0"
   },
   "devDependencies": {
